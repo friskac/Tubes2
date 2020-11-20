@@ -5,16 +5,18 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.FrameLayout;
 
 import com.example.pianotiles.databinding.ActivityMainBinding;
+import com.example.pianotiles.databinding.FragmentGameplayBinding;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements FragmentListener {
 
     //
     LobbyFragment lobbyFragment;
@@ -49,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         this.fragmentManager = this.getSupportFragmentManager();
 
         setContentView(binding.getRoot());
+
+        //The first fragment shown when app being run
+        this.changePage(FragmentType.FRAGMENT_GAME_PLAY);
     }
 
     /**
@@ -65,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         switch (fragmentType) {
             case FRAGMENT_LOBBY:
                 //to be implemented
-
                 selectedFragment = this.lobbyFragment;
                 break;
             case FRAGMENT_GAME_PLAY:
@@ -82,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case FRAGMENT_HIGH_SCORE:
                 //to be implemented
-
                 selectedFragment = this.scoreFragment;
                 break;
             default:
@@ -103,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
             //Get next fragment from the list that is going to be hidden
             Fragment fragment = iterator.next();
 
-//            Log.d("debug change page", "Curr: " + fragment.getClass().getName() + ", Selected " + (selectedFragment.getClass().getName())); //Uncomment to debug
+            Log.d("debug change page", "Curr: " + fragment.getClass().getName() + ", Selected " + (selectedFragment.getClass().getName())); //Uncomment to debug
 
             if (fragment.getClass().getName().equals(selectedFragment.getClass().getName()))
                 //If curent fragment class name (string) equal to the selected fragment class name,
