@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Piano Tiles</string>
+
+
+    <!--Drawer's Strings-->
+    <string name="open_drawer">Open</string>
+    <string name="close_drawer">Close</string>
+
+
 </resources>
