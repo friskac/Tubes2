@@ -8,4 +8,7 @@
     <color name="black">#FF000000</color>
     <color name="gray_shade">#B2222222</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="violet">#EE82EE</color>
+    <color name="plum">	#DDA0DD</color>
+    <color name="thistle">#D8BFD8</color>
 </resources>
