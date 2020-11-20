@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         setContentView(binding.getRoot());
 
         //The first fragment shown when app being run
-        this.changePage(FragmentType.FRAGMENT_GAME_PLAY);
+        this.changePage(FragmentType.FRAGMENT_LOBBY);
     }
 
     /**
