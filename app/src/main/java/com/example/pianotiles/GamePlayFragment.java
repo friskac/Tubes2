@@ -82,7 +82,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-        if (view == this.btnStart) {
+        if (view.getId() == this.btnStart.getId()) {
            this.initiateCanvas();
            this.btnStart.setVisibility(View.GONE);
            this.llBtnStart.setVisibility(View.GONE);
