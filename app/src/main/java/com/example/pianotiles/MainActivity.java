@@ -26,6 +26,10 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
     ScoreFragment scoreFragment;
     SettingFragment settingFragment;
 
+    //Fragment history
+    Stack<FragmentType> states;
+    FragmentType lastState;
+
 
     //ArrayList to put fragments
     //implementation for hiding all other fragments can be easily applied using iterator
@@ -53,10 +57,14 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
 
         this.fragmentManager = this.getSupportFragmentManager();
 
+        this.states = new Stack<>();
+
         setContentView(binding.getRoot());
 
         //The first fragment shown when app being run
-        this.changePage(FragmentType.FRAGMENT_LOBBY);
+        this.lastState = null;
+        this.changePage(FragmentType.FRAGMENT_LOBBY, false, null);
+
     }
 
     /**
@@ -64,11 +72,17 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
      *
      * @param fragmentType Type of fragment that is going to be shown
      */
-    public void changePage(FragmentType fragmentType) {
+    public void changePage(FragmentType fragmentType, boolean isPop, Bundle savedBundleInstance) {
         FragmentTransaction ft = this.fragmentManager.beginTransaction();
 
         //fragment to be shown based on the parameter fragmentType
         Fragment selectedFragment;
+
+        if(this.lastState != fragmentType && !isPop){
+            this.states.push(this.lastState);
+        }
+
+        this.lastState =  fragmentType;
 
         switch (fragmentType) {
             case FRAGMENT_LOBBY:
@@ -77,6 +91,9 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
                 break;
             case FRAGMENT_GAME_PLAY:
                 //to be implemented
+                this.fragmentsList.remove(this.gamePlayFragment);
+                this.gamePlayFragment = GamePlayFragment.newInstance(savedBundleInstance);
+                this.fragmentsList.add(this.gamePlayFragment);
                 selectedFragment = this.gamePlayFragment;
                 break;
             case FRAGMENT_SETTING:
@@ -112,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
             Log.d("debug change page", "Curr: " + fragment.getClass().getName() + ", Selected " + (selectedFragment.getClass().getName())); //Uncomment to debug
 
             if (fragment.getClass().getName().equals(selectedFragment.getClass().getName()))
-                //If curent fragment class name (string) equal to the selected fragment class name,
+                //If current fragment class name (string) equal to the selected fragment class name,
                 // then skip hiding current fragment
                 continue;
             if (fragment.isAdded()) {
@@ -121,9 +138,8 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         }
 
         ft.commit();
-
-
     }
+
 
     @Override
     public void closeApplication() {
@@ -131,5 +147,14 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         this.finish();
     }
 
+    @Override
+    public void onBackPressed() {
+        if(!this.states.isEmpty()){
+            changePage(this.states.pop(), true, null);
+        }
+        else {
+            closeApplication();
+        }
+    }
 
 }

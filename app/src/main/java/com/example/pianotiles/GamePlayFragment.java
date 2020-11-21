@@ -4,7 +4,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Picture;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
 import android.view.LayoutInflater;
@@ -108,8 +110,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
 
     public void resetCanvas() {
         // 4. Draw canvas background
-        int mColorWhite = ResourcesCompat.getColor(getResources(), R.color.white, null);
-        this.gameCanvas.drawColor(mColorWhite);
+        //Reference: https://stackoverflow.com/questions/2172523/draw-object-image-on-canvas
+        Drawable backGroundPicture = ResourcesCompat.getDrawable(getResources(), R.drawable.bg4, null);
+        Rect imageBounds = this.gameCanvas.getClipBounds();
+        backGroundPicture.setBounds(imageBounds);
+        backGroundPicture.draw(gameCanvas);
 
         // 5. force draw
         this.ivCanvas.invalidate();
@@ -118,6 +123,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         this.strokePaint.setStrokeWidth(PAINT_STROKE_SIZE);
         this.changeStrokeColor(R.color.black);
     }
+
 
     private void changeStrokeColor(int color) {
         //change stroke color using parameter (color resource id)
