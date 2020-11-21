@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import com.example.pianotiles.databinding.FragmentGameplayBinding;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity implements FragmentListener {
 
@@ -23,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
     GamePlayFragment gamePlayFragment;
     ScoreFragment scoreFragment;
     SettingFragment settingFragment;
+
 
     //ArrayList to put fragments
     //implementation for hiding all other fragments can be easily applied using iterator
@@ -121,4 +124,12 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
 
 
     }
+
+    @Override
+    public void closeApplication() {
+        this.moveTaskToBack(true);
+        this.finish();
+    }
+
+
 }
