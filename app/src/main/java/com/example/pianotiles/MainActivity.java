@@ -4,12 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.drawerlayout.widget.DrawerLayout;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.FrameLayout;
 
 
 import com.example.pianotiles.databinding.ActivityMainBinding;
