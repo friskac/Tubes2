@@ -6,8 +6,16 @@
     android:orientation="vertical"
     android:gravity="center"
     android:background="@drawable/bg3">
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Fragment High Score"/>
+            android:text="Scores"
+            android:textSize="@dimen/score"
+            android:padding="@dimen/score"/>
+
+        <ListView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/list_score"/>
 </LinearLayout>
