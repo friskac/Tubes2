@@ -19,19 +19,22 @@ public class ThreadHandler extends java.lang.Thread{
     public void run() {
         super.run();
 
-        ArrayList<Tiles> listTiles = this.UIThread.getFragmentGame().getTileList();
+        while(true){
 
-        for(int i = 0; i< listTiles.size(); i++){
-            Tiles currTile = listTiles.get(i);
+            ArrayList<Tiles> listTiles = this.UIThread.getFragmentGame().getTileList();
 
-            currTile.setY(currTile.getY() + FRAME_CHANGE_RATE);
+            for(int i = 0; i< listTiles.size(); i++){
+                Tiles currTile = listTiles.get(i);
+                currTile.setY(currTile.getY() + FRAME_CHANGE_RATE);
+            }
+
+            this.UIThread.setMove(listTiles);
+            try{
+                Thread.sleep(100);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
         }
 
-        this.UIThread.setMove(listTiles);
-        try{
-            Thread.sleep(100);
-        }catch(Exception e){
-            e.printStackTrace();
-        }
     }
 }

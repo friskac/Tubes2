@@ -10,6 +10,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,13 +45,13 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
 
     private boolean isCanvasInitiated;
 
-    private ArrayList<Rect> rectInsideCanvas;
 
     private FragmentListener listener;
 
     public GamePlayFragment() {
 
     }
+
     public ArrayList<Tiles> getTileList(){ return this.listTIle;}
 
 
@@ -73,7 +74,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         this.btnStart = binding.btnStart;
         this.btnStart.setOnClickListener(this);
 
-        this.rectInsideCanvas = new ArrayList<>();
+        this.uiHandler = new UIThreadHandler(this);
 
         return view;
     }
@@ -85,7 +86,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         } else {
             throw new ClassCastException(context.toString() + " must implement FragmentListener");
         }
-
     }
 
 
@@ -95,12 +95,12 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
            this.initiateCanvas();
            this.btnStart.setVisibility(View.GONE);
            this.llBtnStart.setVisibility(View.GONE);
-           this.renderTiles(20,400);
+//           this.renderTiles(20,400);
+            this.fillTheList();
            ThreadHandler thread = new ThreadHandler(this.uiHandler);
            thread.nonBlocking();
         }
     }
-
 
     private void initiateCanvas() {
         // 1. Create Bitmap
@@ -121,6 +121,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         this.listTIle = new ArrayList<>();
         int width = this.ivCanvas.getWidth()/4;
         int height = this.ivCanvas.getHeight()/4;
+        Log.d("debug", "height : "+height);
         this.listTIle.add(new Tiles(20, 100, width, height));
     }
 
@@ -149,7 +150,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
 
     public void renderTiles(int x, int y){
         int width = this.ivCanvas.getWidth()/4;
-        int height = this.ivCanvas.getHeight()/5;
+        int height = this.ivCanvas.getHeight()/4;
         this.tile = new Tiles(x,y,width,height);
         Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
 
@@ -164,6 +165,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
     }
 
     public void renderTiles2(Tiles tile){
+        this.resetCanvas();
         int width = this.ivCanvas.getWidth()/4;
         int height = this.ivCanvas.getHeight()/4;
 
