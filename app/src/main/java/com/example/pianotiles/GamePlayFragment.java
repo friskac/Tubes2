@@ -1,5 +1,6 @@
 package com.example.pianotiles;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -17,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.constraintlayout.solver.widgets.Rectangle;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.Fragment;
 
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 public class GamePlayFragment extends Fragment implements View.OnClickListener {
     final static int PAINT_STROKE_SIZE = 10;
     private Song mockSong;
+    private Tiles tile;
 
     private TextView tvScore;
     private ImageView ivCanvas;
@@ -62,7 +65,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         this.tvScore = binding.tvScore;
         this.ivCanvas = binding.ivCanvas;
 
-        this.llBtnStart = binding.llStart;
+        this.llBtnStart = binding.llstart;
         this.btnStart = binding.btnStart;
         this.btnStart.setOnClickListener(this);
 
@@ -88,6 +91,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
            this.initiateCanvas();
            this.btnStart.setVisibility(View.GONE);
            this.llBtnStart.setVisibility(View.GONE);
+           this.renderTiles(20,400);
         }
     }
 
@@ -129,6 +133,22 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
         //change stroke color using parameter (color resource id)
         int mColor = ResourcesCompat.getColor(getResources(), color, null);
         this.strokePaint.setColor(mColor);
+    }
+
+    public void renderTiles(int x, int y){
+        int width = this.ivCanvas.getWidth()/4;
+        int height = this.ivCanvas.getHeight()/4;
+        this.tile = new Tiles(x,y,width,height);
+        Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
+
+        int left = tile.getX();
+        int right = tile.getX() + tile.getWidth();
+        int top = tile.getY();
+        int bottom = tile.getY() - tile.getHeight();
+        bg.mutate().setBounds(left, top, right, bottom);
+        bg.draw(this.gameCanvas);
+
+        this.ivCanvas.invalidate();
     }
 
 }
