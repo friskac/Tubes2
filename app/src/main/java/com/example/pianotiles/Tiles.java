@@ -1,7 +1,7 @@
 package com.example.pianotiles;
 
 public class Tiles {
-    private int x, y, width, height;
+    protected int x, y, width, height;
 
     public Tiles (int x, int y, int width, int height){
         this.x = x;
