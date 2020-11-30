@@ -137,14 +137,14 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener {
 
     public void renderTiles(int x, int y){
         int width = this.ivCanvas.getWidth()/4;
-        int height = this.ivCanvas.getHeight()/4;
+        int height = this.ivCanvas.getHeight()/5;
         this.tile = new Tiles(x,y,width,height);
         Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
 
         int left = tile.getX();
         int right = tile.getX() + tile.getWidth();
-        int top = tile.getY();
-        int bottom = tile.getY() - tile.getHeight();
+        int bottom = tile.getY();
+        int top = tile.getY() - tile.getHeight();
         bg.mutate().setBounds(left, top, right, bottom);
         bg.draw(this.gameCanvas);
 
