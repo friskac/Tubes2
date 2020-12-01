@@ -67,39 +67,25 @@ public class Song {
 }
 
 class Note {
+    private String noteName;
     private int xBarIndex;
     private long startTime;
     private long noteDuration;
-    private int state;
 
 
-    private final static int NOTE_READY = 0;
-    private final static int NOTE_PRESSED = 1;
-    private final static int NOTE_MISSED = 2;
-    private final static int NOTE_EXIT_CANVAS = 2;
-
-    public Note(int barIndex, long startTime, long noteDuration, int state) {
+    public Note(int barIndex, long startTime, long noteDuration,  String noteName) {
         this.xBarIndex = barIndex;
         this.startTime = startTime;
         this.noteDuration = noteDuration;
-        this.state = state;
+        this.noteName = noteName;
     }
 
     public Note(int barIndex, long startTime, long noteDuration) {
         this.xBarIndex = barIndex;
         this.startTime = startTime;
         this.noteDuration = noteDuration;
-        this.state = Note.NOTE_READY;
     }
 
-    public int modifyState(int newState) {
-        this.state = newState;
-        return this.state;
-    }
-
-    public int getState() {
-        return state;
-    }
 
     public long getNoteDuration() {
         return noteDuration;

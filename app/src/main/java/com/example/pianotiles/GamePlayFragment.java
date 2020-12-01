@@ -57,7 +57,9 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
     }
 
-    public ArrayList<Tiles> getTileList(){ return this.listTile;}
+    public ArrayList<Tiles> getTileList() {
+        return this.listTile;
+    }
 
 
     public static GamePlayFragment newInstance(Bundle args) {
@@ -88,7 +90,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     }
 
     /**
-     *
      * @param context
      */
     public void onAttach(Context context) {
@@ -104,13 +105,12 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     @Override
     public void onClick(View view) {
         if (view.getId() == this.btnStart.getId()) {
-           this.initiateCanvas();
-           this.btnStart.setVisibility(View.GONE);
-           this.llBtnStart.setVisibility(View.GONE);
-//           this.renderTiles(20,400);
+            this.initiateCanvas();
+            this.btnStart.setVisibility(View.GONE);
+            this.llBtnStart.setVisibility(View.GONE);
             this.fillTheList();
-           ThreadHandler thread = new ThreadHandler(this.uiHandler, this.ivCanvas.getHeight());
-           thread.nonBlocking();
+            ThreadHandler thread = new ThreadHandler(this.uiHandler, this.ivCanvas.getHeight());
+            thread.nonBlocking();
         }
     }
 
@@ -135,15 +135,57 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     /**
      * Mengisi list tiles dengan tiles dummy
      */
-    public void fillTheList(){
+    public void fillTheList() {
         this.listTile = new ArrayList<>();
-        int width = this.ivCanvas.getWidth()/4;
-        int height = this.ivCanvas.getHeight()/5;
-        Log.d("debug", "height : "+height);
-        Log.d("debug", "width : "+width);
-        this.listTile.add(new Tiles(20, 100, width, height));
-        this.listTile.add(new Tiles(200, -191, width, height));
-        this.listTile.add(new Tiles(200, -490, width, height*2));
+        int width = this.ivCanvas.getWidth() / 4;
+        int height = this.ivCanvas.getHeight() / 5;
+        int spacing = this.ivCanvas.getHeight() / 20;
+        int initialSpace = this.ivCanvas.getHeight();
+        Log.d("debug", "height : " + height);
+        Log.d("debug", "width : " + width);
+
+        Song mockSong = MockSong.getMockSong();
+        Iterator<Note> iterator = mockSong.getNotes().iterator();
+        Tiles prevTile = null;
+        while (iterator.hasNext()) {
+            Tiles currTile;
+            if (prevTile == null) {
+                Note currNote = iterator.next();
+                int barIdx = currNote.getxBarIndex();
+                int x = (barIdx * width);
+
+//                int y = (int) (Math.floor(currNote.getStartTime() / 100000) - initialSpace);
+//                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
+
+                int y = 0 - initialSpace;
+                int tileHeight = height;
+
+                if (tileHeight < 1) {
+                    tileHeight = height;
+                }
+                int tileWidth = width;
+                currTile = new Tiles(x, y, tileWidth, tileHeight);
+            } else {
+                Note currNote = iterator.next();
+                int barIdx = currNote.getxBarIndex();
+                int x = (barIdx * width);
+//                int y = (int) (Math.floor(currNote.getStartTime() / 100000))-prevTile.top()-spacing;
+                int y = prevTile.top() - spacing;
+//                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
+                int tileHeight =  height;
+
+                if (tileHeight < 1) {
+                    tileHeight = height;
+                }
+                int tileWidth = width;
+                currTile = new Tiles(x, y, tileWidth, tileHeight);
+            }
+
+            this.listTile.add(currTile);
+            prevTile = currTile;
+        }
+
+        Log.d("debug fill list", "List size : " + this.listTile.size());
     }
 
     /**
@@ -161,10 +203,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         this.ivCanvas.invalidate();
     }
 
-    public void renderTiles(int x, int y){
-        int width = this.ivCanvas.getWidth()/4;
-        int height = this.ivCanvas.getHeight()/4;
-        this.tile = new Tiles(x,y,width,height);
+    public void renderTiles(int x, int y) {
+        int width = this.ivCanvas.getWidth() / 4;
+        int height = this.ivCanvas.getHeight() / 4;
+        this.tile = new Tiles(x, y, width, height);
         Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
 
         int left = tile.getX();
@@ -174,18 +216,18 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         bg.mutate().setBounds(left, top, right, bottom);
         bg.draw(this.gameCanvas);
 
-        this.ivCanvas.invalidate(); 
+        this.ivCanvas.invalidate();
     }
 
     /**
      * Method untuk render ulang tiles yang ada di list
      */
-    public void renderTiles(){
+    public void renderTiles() {
         //Reset ulang ImageView jadi background kosong
         this.resetCanvas();
 
         //untuk setiap tile dibuat drawablenya
-        for(int i =0; i<this.listTile.size(); i++){
+        for (int i = 0; i < this.listTile.size(); i++) {
             Tiles tile = listTile.get(i);
 
             Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
@@ -208,9 +250,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     /**
      * Implementasi onTouch listener untuk ImageView yang digunakan dalam permainan
      * Alasan dipisah ada yang pake MyDetector sama da yang ga pake:
-     *      - MyDetector ga bisa deteksi keyRelease, jadi manual lewat switch case ACTION_POINTER_UP sama ACTION_UP
-     *      - MyDetector kepake buat motion kaya onScroll sama onFling kalo mau dilanjutin implementasi multitouch si tile
-     * @param v view tempat touch event terjadi
+     * - MyDetector ga bisa deteksi keyRelease, jadi manual lewat switch case ACTION_POINTER_UP sama ACTION_UP
+     * - MyDetector kepake buat motion kaya onScroll sama onFling kalo mau dilanjutin implementasi multitouch si tile
+     *
+     * @param v     view tempat touch event terjadi
      * @param event jenis event pada view
      * @return
      */
@@ -231,7 +274,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     }
 
     /**
-     *Method buat process si motion event untuk action event tertentu
+     * Method buat process si motion event untuk action event tertentu
      *
      * @param debugType
      * @param event
@@ -251,10 +294,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             Log.d(debugType, String.format("release [x] : %.3f, [y] : %.3f", pointer.x, pointer.y));
             if (isCanvasInitiated) {
                 if (debugType.equals("touch")) {
-                    int color = Color.argb(255, 77,128,205);
+                    int color = Color.argb(255, 77, 128, 205);
                     recolorTile(pointerId, pointer, color, true, false);
                 } else if (debugType.equals("release")) {
-                    int color = Color.argb((int)(255*0.75), 147,157,165);
+                    int color = Color.argb((int) (255 * 0.75), 147, 157, 165);
                     recolorTile(pointerId, pointer, color, true, true);
                 }
             }
@@ -265,20 +308,21 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
     /**
      * Menggambar ulang tile yang ada di tileList ke canvas berdasarkan hasil update dari thread
+     *
      * @param pointerId pointer untuk touch event (kalo mau ada implementasi multitouch)
-     * @param coords koordinat touch event
-     * @param color warna berdasarkan event touch
-     * @param pressed state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN
-     * @param released state bernilai true untuk event ACTION_POINTER_UP atau ACTION_UP
+     * @param coords    koordinat touch event
+     * @param color     warna berdasarkan event touch
+     * @param pressed   state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN
+     * @param released  state bernilai true untuk event ACTION_POINTER_UP atau ACTION_UP
      */
-    public void recolorTile(int pointerId, MotionEvent.PointerCoords coords, int color, boolean pressed, boolean released){
+    public void recolorTile(int pointerId, MotionEvent.PointerCoords coords, int color, boolean pressed, boolean released) {
         Iterator<Tiles> iterator = this.listTile.iterator();
 
-        while(iterator.hasNext()){
+        while (iterator.hasNext()) {
             Tiles currTile = iterator.next();
 
             //Cek jika koordinat touch event berada di dalam area tile
-            if((currTile.getX() <= coords.x && (currTile.getX()+currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY()-currTile.getHeight()) < coords.y)){
+            if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
 
                 //set warna dari tile
                 currTile.setColor(color);
