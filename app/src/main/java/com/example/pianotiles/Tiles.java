@@ -1,13 +1,22 @@
 package com.example.pianotiles;
 
+import android.graphics.Color;
+
 public class Tiles {
-    protected int x, y, width, height;
+    protected int x, y, width, height, color;
+    boolean isPressed, isReleased, isMissed;
 
     public Tiles (int x, int y, int width, int height){
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+        this.isPressed = false;
+        this.isReleased = false;
+        this.isMissed = false;
+
+        //Warna default hitam
+        this.color = Color.argb(255,0,0,0);
     }
 
     public int getX() {
@@ -41,4 +50,45 @@ public class Tiles {
     public void setHeight(int height) {
         this.height = height;
     }
+
+    public int getColor() {
+        return color;
+    }
+
+    public void setColor(int color) {
+        this.color = color;
+    }
+
+    public void setPressed(boolean pressed) {
+        isPressed = pressed;
+    }
+
+    public void setReleased(boolean released) {
+        isReleased = released;
+    }
+
+    public boolean isPressed() {
+        return isPressed;
+    }
+
+    public boolean isReleased() {
+        return isReleased;
+    }
+
+    public int top(){
+        return this.y - this.height;
+    }
+
+    public int bottom(){
+        return this.y ;
+    }
+
+    public int left(){
+        return this.x;
+    }
+
+    public int right(){
+        return this.x+this.width;
+    }
+
 }
