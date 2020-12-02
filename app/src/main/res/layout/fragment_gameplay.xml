@@ -6,6 +6,13 @@
     android:orientation="vertical"
     android:gravity="center"
     android:background="@drawable/bg4">
+
+    <ImageView
+        android:id="@+id/iv_canvas"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,6 +24,7 @@
             android:layout_height="wrap_content"
             android:text="Score:"
             android:textSize="@dimen/score"
+            android:background="@color/lightYellow"
             />
 
         <TextView
@@ -24,15 +32,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="000"
-            android:textSize="@dimen/score"/>
+            android:textSize="@dimen/score"
+            android:background="@color/lightYellow"/>
 
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/iv_canvas"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1"/>
+
 
     <LinearLayout
         android:id="@+id/llstart"
