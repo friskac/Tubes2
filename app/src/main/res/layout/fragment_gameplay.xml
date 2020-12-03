@@ -33,11 +33,10 @@
             android:layout_height="wrap_content"
             android:text="000"
             android:textSize="@dimen/score"
-            android:background="@color/lightYellow"/>
+            android:background="@color/lightYellow"
+            android:textStyle="bold"/>
 
     </LinearLayout>
-
-
 
     <LinearLayout
         android:id="@+id/llstart"

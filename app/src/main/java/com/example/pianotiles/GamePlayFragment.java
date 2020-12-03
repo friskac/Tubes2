@@ -269,12 +269,15 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         switch (action & event.ACTION_MASK) {
             case MotionEvent.ACTION_POINTER_UP:
             case MotionEvent.ACTION_UP:
-                int color = ResourcesCompat.getColor(getResources(), R.color.red,null);
+                int color = ResourcesCompat.getColor(getResources(), R.color.gray_shade,null);
                 recolorTile(pointer,color,false);
+                return true;
+
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                int color2 = Color.argb(255, 77, 128, 205);
+                int color2 = ResourcesCompat.getColor(getResources(), R.color.blue,null);
                 recolorTile(pointer,color2,true);
+                return true;
             default:
                 return this.mDetector.onTouchEvent(event);
         }
@@ -316,40 +319,60 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     /**
      * Menggambar ulang tile yang ada di tileList ke canvas berdasarkan hasil update dari thread
      *
-     * @param pointerId pointer untuk touch event (kalo mau ada implementasi multitouch)
      * @param coords    koordinat touch event
      * @param color     warna berdasarkan event touch
-     * @param pressed   state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN
-     * @param released  state bernilai true untuk event ACTION_POINTER_UP atau ACTION_UP
+     * @param pressed   state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN dan bernilai false untuk event ACTION_POINTER_UP atau ACTION_UP
      */
     public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
         Iterator<Tiles> iterator = this.listTile.iterator();
 
-        while (iterator.hasNext()) {
+        while (this.listTile.size()> 0 && iterator.hasNext()) {
             Tiles currTile = iterator.next();
 
-            //Cek jika koordinat touch event berada di dalam area tile
-            if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
+            if(pressed){
+                //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
 
-                //set warna dari tile
-                currTile.setColor(color);
-                if (pressed){
+                //Cek koordinat sentuh berada di dalam area tiles
+                if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
+
+                    //set warna dari tile
+                    currTile.setColor(color);
+                    //set state tiles pernah disentuh
                     currTile.setPressed(true);
-                }
-                else {
-                    currTile.setReleased(true);
-                }
-                if (!pressed && currTile.isPressed() && !currTile.isReleased()){
-                    this.currScore += 10;
-                    this.tvScore.setText(this.currScore);
-                }
 
+                    //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
+                    //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
+                    if (currTile.isPressed() && !currTile.isReleased()){
+                        this.currScore += 10;
+                        this.tvScore.setText(this.currScore+"");
+                        this.ivCanvas.invalidate();
+                    }
+                }
+            }else{
+                //Merupakan event ACTION_POINTER_UP atau ACTION_UP
+
+                //Cek koordinat x dari event sentuh berada di dalam area antara left dan right dari tiles
+                //Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
+                //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
+                if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
+                        && (currTile.left() <= coords.x ) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
+                        && (currTile.right()  >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
+                        && (currTile.bottom() >= coords.y)//Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
+                    //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
+                ) {
+                    //set warna dari tile
+                    currTile.setColor(color);
+                    currTile.setReleased(true);
+
+                }
             }
         }
     }
 
     public void showGameDialog(){
-        this.popupScoreFragment = new PopupScoreFragment();
+        Bundle args = new Bundle();
+        args.putInt("highscore", this.currScore);
+        this.popupScoreFragment = PopupScoreFragment.newInstance(args);
         this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
     }
 
