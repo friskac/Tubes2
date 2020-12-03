@@ -38,6 +38,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     private PopupScoreFragment popupScoreFragment;
     private ArrayList<Tiles> listTile;
     private UIThreadHandler uiHandler;
+    private ThreadHandler threadHandler;
 
     private TextView tvScore;
     private ImageView ivCanvas;
@@ -112,8 +113,8 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             this.btnStart.setVisibility(View.GONE);
             this.llBtnStart.setVisibility(View.GONE);
             this.fillTheList();
-            ThreadHandler thread = new ThreadHandler(this.uiHandler, this.ivCanvas.getHeight());
-            thread.nonBlocking();
+            threadHandler = new ThreadHandler(this.uiHandler, this.ivCanvas.getHeight());
+            threadHandler.nonBlocking();
         }
     }
 
@@ -175,7 +176,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 //                int y = (int) (Math.floor(currNote.getStartTime() / 100000))-prevTile.top()-spacing;
                 int y = prevTile.top() - spacing;
 //                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
-                int tileHeight =  height;
+                int tileHeight = height;
 
                 if (tileHeight < 1) {
                     tileHeight = height;
@@ -262,25 +263,30 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      */
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        int action = event.getAction();
-        int pointerIndex = event.getActionIndex();
-        MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
-        event.getPointerCoords(pointerIndex, pointer);
-        switch (action & event.ACTION_MASK) {
-            case MotionEvent.ACTION_POINTER_UP:
-            case MotionEvent.ACTION_UP:
-                int color = ResourcesCompat.getColor(getResources(), R.color.gray_shade,null);
-                recolorTile(pointer,color,false);
-                return true;
+        //Touch event hanya akan dihandle jika start button sudah di tekan
+        //Tanpa pengecekan kondisi ini akan terjadi exception
+        if (isCanvasInitiated) {
+            int action = event.getAction();
+            int pointerIndex = event.getActionIndex();
+            MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
+            event.getPointerCoords(pointerIndex, pointer);
+            switch (action & event.ACTION_MASK) {
+                case MotionEvent.ACTION_POINTER_UP:
+                case MotionEvent.ACTION_UP:
+                    int color = ResourcesCompat.getColor(getResources(), R.color.gray_shade, null);
+                    recolorTile(pointer, color, false);
+                    return true;
 
-            case MotionEvent.ACTION_DOWN:
-            case MotionEvent.ACTION_POINTER_DOWN:
-                int color2 = ResourcesCompat.getColor(getResources(), R.color.blue,null);
-                recolorTile(pointer,color2,true);
-                return true;
-            default:
-                return this.mDetector.onTouchEvent(event);
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN:
+                    int color2 = ResourcesCompat.getColor(getResources(), R.color.blue, null);
+                    recolorTile(pointer, color2, true);
+                    return true;
+                default:
+                    return this.mDetector.onTouchEvent(event);
+            }
         }
+        return true;
     }
 
     /**
@@ -319,17 +325,17 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     /**
      * Menggambar ulang tile yang ada di tileList ke canvas berdasarkan hasil update dari thread
      *
-     * @param coords    koordinat touch event
-     * @param color     warna berdasarkan event touch
-     * @param pressed   state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN dan bernilai false untuk event ACTION_POINTER_UP atau ACTION_UP
+     * @param coords  koordinat touch event
+     * @param color   warna berdasarkan event touch
+     * @param pressed state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN dan bernilai false untuk event ACTION_POINTER_UP atau ACTION_UP
      */
     public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
         Iterator<Tiles> iterator = this.listTile.iterator();
 
-        while (this.listTile.size()> 0 && iterator.hasNext()) {
+        while (this.listTile.size() > 0 && iterator.hasNext()) {
             Tiles currTile = iterator.next();
 
-            if(pressed){
+            if (pressed) {
                 //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
 
                 //Cek koordinat sentuh berada di dalam area tiles
@@ -342,21 +348,20 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
                     //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
                     //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
-                    if (currTile.isPressed() && !currTile.isReleased()){
+                    if (currTile.isPressed() && !currTile.isReleased()) {
                         this.currScore += 10;
-                        this.tvScore.setText(this.currScore+"");
-                        this.ivCanvas.invalidate();
+                        this.tvScore.setText(this.currScore + "");
                     }
                 }
-            }else{
+            } else {
                 //Merupakan event ACTION_POINTER_UP atau ACTION_UP
 
                 //Cek koordinat x dari event sentuh berada di dalam area antara left dan right dari tiles
                 //Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
                 //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
                 if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
-                        && (currTile.left() <= coords.x ) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
-                        && (currTile.right()  >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
+                        && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
+                        && (currTile.right() >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
                         && (currTile.bottom() >= coords.y)//Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
                     //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
                 ) {
@@ -369,11 +374,23 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         }
     }
 
-    public void showGameDialog(){
+    public void showGameDialog() {
         Bundle args = new Bundle();
         args.putInt("highscore", this.currScore);
         this.popupScoreFragment = PopupScoreFragment.newInstance(args);
         this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
+
+    }
+
+    /**
+     * Metode untuk menghentikan thread ketika dilakukan back press dari gameplay fragment ke lobby
+     */
+    public void stopOnHide() {
+        //Reference:https://developer.android.com/reference/android/app/Fragment.html#isHidden()
+        if (isHidden()) {
+            //Cek status fragment hidden atau tidak
+            this.threadHandler.setStopped(true);
+        }
     }
 
 

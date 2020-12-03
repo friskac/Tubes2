@@ -10,16 +10,21 @@ public class ThreadHandler extends java.lang.Thread {
     protected UIThreadHandler UIThread;
     protected int FRAME_CHANGE_RATE = 75;
     protected int canvasHeight;
+    protected boolean isStopped;
 
     public ThreadHandler(UIThreadHandler UIThread, int canvasHeight) {
         this.UIThread = UIThread;
         this.canvasHeight = canvasHeight;
-
+        this.isStopped = false;
     }
 
     public void nonBlocking() {
         this.start();
         System.out.println("Called");
+    }
+
+    public void setStopped(boolean isStopped){
+        this.isStopped = isStopped;
     }
 
     @Override
@@ -29,13 +34,14 @@ public class ThreadHandler extends java.lang.Thread {
         boolean noMissedTile = true;
         boolean gameFinished = false;
 
-        while (noMissedTile && !gameFinished) {
+        while (noMissedTile && !gameFinished && !isStopped) {
             ArrayList<Tiles> listTiles = this.UIThread.getFragmentGame().getTileList();
             ArrayList<Tiles> toBeDelete = new ArrayList<>();
             if(listTiles.isEmpty()){
                 gameFinished = true;
                 continue;
             }
+
 
             Log.d("debug thread", listTiles.size()+"");
 
@@ -76,6 +82,9 @@ public class ThreadHandler extends java.lang.Thread {
             }
             //Gambar ulang semua tile di ImageView
             this.UIThread.setMove();
+
+            //Cek visibilitas fragment gameplay
+            this.UIThread.checkFragmentVisibility();
 
             try {
                 Thread.sleep(100);

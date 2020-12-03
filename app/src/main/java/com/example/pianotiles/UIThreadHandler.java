@@ -10,6 +10,7 @@ import java.util.ArrayList;
 public class UIThreadHandler extends Handler {
     protected final static int MSG_RENDER_TILE = 0;
     protected final static int MSG_TOOGLE_DIALOG = 1;
+    protected final static int MSG_CHECK_VISIBILITY = 2;
     protected GamePlayFragment gpf;
 
     public UIThreadHandler(GamePlayFragment gpf) {
@@ -25,6 +26,8 @@ public class UIThreadHandler extends Handler {
         }
         else if (m.what == UIThreadHandler.MSG_TOOGLE_DIALOG){
             this.gpf.showGameDialog();
+        }else if (m.what == UIThreadHandler.MSG_CHECK_VISIBILITY){
+            this.gpf.stopOnHide();
         }
     }
 
@@ -41,6 +44,12 @@ public class UIThreadHandler extends Handler {
     public void toggleDialog() {
         Message m = new Message();
         m.what = MSG_TOOGLE_DIALOG;
+        this.sendMessage(m);
+    }
+
+    public void checkFragmentVisibility(){
+        Message m = new Message();
+        m.what = MSG_CHECK_VISIBILITY;
         this.sendMessage(m);
     }
 }

@@ -60,11 +60,11 @@ public class PopupScoreFragment extends DialogFragment implements View.OnClickLi
     @Override
     public void onClick(View v) {
         if(v == this.btnPlayAgain){
-            dismiss();
             this.listener.changePage(FragmentType.FRAGMENT_GAME_PLAY, true, null);
-        }else if(v == this.btnExitToMenu){
             dismiss();
+        }else if(v == this.btnExitToMenu){
             this.listener.changePage(FragmentType.FRAGMENT_LOBBY, true, null);
+            dismiss();
         }
     }
 }

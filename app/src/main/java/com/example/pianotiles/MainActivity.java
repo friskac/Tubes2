@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         //fragment to be shown based on the parameter fragmentType
         Fragment selectedFragment;
 
+        Log.d("debug change page", "Last state: " + lastState); //Uncomment to debug
+
         if(this.lastState != fragmentType && !isPop){
             this.states.push(this.lastState);
         }
@@ -86,30 +88,31 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
 
         switch (fragmentType) {
             case FRAGMENT_LOBBY:
-                //to be implemented
                 selectedFragment = this.lobbyFragment;
                 break;
             case FRAGMENT_GAME_PLAY:
-                //to be implemented
+                //On case where the game ends, user press play again button, then the game ends again, and the user press exit button,
+                //the screen will be changed to the second latest gameplay fragment, because it has not being removed from fragment transaction.
+                //To prevent it from happens, the fragment must be removed from fragment transaction
+                ft.remove(this.gamePlayFragment);
+
+                //Remove the gameplay fragment from fragment list
                 this.fragmentsList.remove(this.gamePlayFragment);
+                //Create new instance of gameplay fragment
                 this.gamePlayFragment = GamePlayFragment.newInstance(savedBundleInstance);
                 this.fragmentsList.add(this.gamePlayFragment);
                 selectedFragment = this.gamePlayFragment;
                 break;
             case FRAGMENT_SETTING:
-                //to be implemented
                 selectedFragment = this.settingFragment;
                 break;
             case FRAGMENT_LIST_SONG:
-                //to be implemented
                 selectedFragment = null;
                 break;
             case FRAGMENT_HIGH_SCORE:
-                //to be implemented
                 selectedFragment = this.scoreFragment;
                 break;
             default:
-                //to be implemented
                 selectedFragment = this.lobbyFragment;
         }
 
