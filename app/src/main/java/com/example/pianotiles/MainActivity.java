@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
     GamePlayFragment gamePlayFragment;
     ScoreFragment scoreFragment;
     SettingFragment settingFragment;
+    PopupScoreFragment popupScoreFragment;
 
     //Fragment history
     Stack<FragmentType> states;
@@ -51,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         this.fragmentsList.add(this.settingFragment);
         this.scoreFragment = new ScoreFragment();
         this.fragmentsList.add(this.scoreFragment);
+        this.popupScoreFragment = new PopupScoreFragment();
+        this.fragmentsList.add(this.popupScoreFragment);
 
         this.fragmentManager = this.getSupportFragmentManager();
 

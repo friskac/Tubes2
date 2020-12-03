@@ -64,14 +64,15 @@ public class ThreadHandler extends java.lang.Thread {
             for (int i = 0; i < toBeDelete.size(); i++) {
                 listTiles.remove(toBeDelete.get(i));
             }
-
-            if (noMissedTile == false || gameFinished) {
-                //toggle dialog game selesai lewat UIThreadHandler
-
-            }
-
             //Gambar ulang semua tile di ImageView
             this.UIThread.setMove();
+
+            if (!noMissedTile || gameFinished) {
+                //toggle dialog game selesai lewat UIThreadHandler
+                UIThread.toggleDialog();
+            }
+
+
             try {
                 Thread.sleep(100);
             } catch (Exception e) {

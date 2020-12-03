@@ -35,6 +35,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     final static int PAINT_STROKE_SIZE = 10;
     private Song mockSong;
     private Tiles tile;
+    private PopupScoreFragment popupScoreFragment;
     private ArrayList<Tiles> listTile;
     private UIThreadHandler uiHandler;
 
@@ -49,7 +50,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     private GestureDetector mDetector;
 
     private boolean isCanvasInitiated;
-
+    private int currScore;
 
     private FragmentListener listener;
 
@@ -73,6 +74,8 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         super.onCreate(savedInstanceState);
         FragmentGameplayBinding binding = FragmentGameplayBinding.inflate(getLayoutInflater());
         View view = binding.getRoot();
+
+        this.currScore = 0;
 
         this.tvScore = binding.tvScore;
         this.ivCanvas = binding.ivCanvas;
@@ -260,14 +263,18 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         int action = event.getAction();
-
+        int pointerIndex = event.getActionIndex();
+        MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
+        event.getPointerCoords(pointerIndex, pointer);
         switch (action & event.ACTION_MASK) {
             case MotionEvent.ACTION_POINTER_UP:
             case MotionEvent.ACTION_UP:
-                return processMotionEvent("release", event);
+                int color = ResourcesCompat.getColor(getResources(), R.color.red,null);
+                recolorTile(pointer,color,false);
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
-                return processMotionEvent("touch", event);
+                int color2 = Color.argb(255, 77, 128, 205);
+                recolorTile(pointer,color2,true);
             default:
                 return this.mDetector.onTouchEvent(event);
         }
@@ -280,31 +287,31 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      * @param event
      * @return
      */
-    public boolean processMotionEvent(String debugType, MotionEvent event) {
-        int pointerSize = event.getPointerCount();
-        Log.d(debugType, "Pointer size: " + pointerSize);
-        int pointerId;
-        int pointerIndex;
-        if (pointerSize > 0) {
-            pointerIndex = event.getActionIndex();
-            pointerId = event.getPointerId(pointerIndex);
-            Log.d(debugType, "Pointer ID: " + pointerId);
-            MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
-            event.getPointerCoords(pointerIndex, pointer);
-            Log.d(debugType, String.format("release [x] : %.3f, [y] : %.3f", pointer.x, pointer.y));
-            if (isCanvasInitiated) {
-                if (debugType.equals("touch")) {
-                    int color = Color.argb(255, 77, 128, 205);
-                    recolorTile(pointerId, pointer, color, true, false);
-                } else if (debugType.equals("release")) {
-                    int color = Color.argb((int) (255 * 0.75), 147, 157, 165);
-                    recolorTile(pointerId, pointer, color, true, true);
-                }
-            }
-        }
-
-        return true;
-    }
+//    public boolean processMotionEvent(String debugType, MotionEvent event) {
+//        int pointerSize = event.getPointerCount();
+//        Log.d(debugType, "Pointer size: " + pointerSize);
+//        int pointerId;
+//        int pointerIndex;
+//        if (pointerSize > 0) {
+//            pointerIndex = event.getActionIndex();
+//            pointerId = event.getPointerId(pointerIndex);
+//            Log.d(debugType, "Pointer ID: " + pointerId);
+//            MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
+//            event.getPointerCoords(pointerIndex, pointer);
+//            Log.d(debugType, String.format("release [x] : %.3f, [y] : %.3f", pointer.x, pointer.y));
+//            if (isCanvasInitiated) {
+//                if (debugType.equals("touch")) {
+//                    int color = Color.argb(255, 77, 128, 205);
+//                    recolorTile(pointerId, pointer, color, true, false);
+//                } else if (debugType.equals("release")) {
+//                    int color = Color.argb((int) (255 * 0.75), 147, 157, 165);
+//                    recolorTile(pointerId, pointer, color, true, true);
+//                }
+//            }
+//        }
+//
+//        return true;
+//    }
 
     /**
      * Menggambar ulang tile yang ada di tileList ke canvas berdasarkan hasil update dari thread
@@ -315,7 +322,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      * @param pressed   state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN
      * @param released  state bernilai true untuk event ACTION_POINTER_UP atau ACTION_UP
      */
-    public void recolorTile(int pointerId, MotionEvent.PointerCoords coords, int color, boolean pressed, boolean released) {
+    public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
         Iterator<Tiles> iterator = this.listTile.iterator();
 
         while (iterator.hasNext()) {
@@ -326,14 +333,24 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
                 //set warna dari tile
                 currTile.setColor(color);
+                if (pressed){
+                    currTile.setPressed(true);
+                }
+                else {
+                    currTile.setReleased(true);
+                }
+                if (!pressed && currTile.isPressed() && !currTile.isReleased()){
+                    this.currScore += 10;
+                    this.tvScore.setText(this.currScore);
+                }
 
-                //set state pressed dari tile
-                currTile.setPressed(pressed);
-
-                //set state released dari tile
-                currTile.setReleased(released);
             }
         }
+    }
+
+    public void showGameDialog(){
+        this.popupScoreFragment = new PopupScoreFragment();
+        this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
     }
 
 
