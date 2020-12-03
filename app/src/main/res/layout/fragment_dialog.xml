@@ -10,7 +10,9 @@
         android:orientation="vertical"
         android:minHeight="300dp"
         android:minWidth="300dp"
-        android:layout_gravity="center">
+        android:layout_gravity="center"
+        android:background="@color/powder_blue"
+        >
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -46,7 +48,8 @@
                 android:text="Play Again"
                 android:layout_weight="1"
                 android:id="@+id/btn_playagain"
-                android:layout_margin="@dimen/score"/>
+                android:layout_margin="@dimen/score"
+                android:backgroundTint="@color/mid_blue"/>
 
             <Button
                 android:layout_width="wrap_content"
@@ -54,7 +57,8 @@
                 android:text="Exit"
                 android:layout_weight="1"
                 android:id="@+id/btn_exitondialog"
-                android:layout_margin="@dimen/score"/>
+                android:layout_margin="@dimen/score"
+                android:backgroundTint="@color/mid_blue"/>
 
         </LinearLayout>
 
