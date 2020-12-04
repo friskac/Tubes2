@@ -33,6 +33,15 @@ public class AdapterHighScore extends BaseAdapter {
         }
     }
 
+    public void updateScore(){
+        this.score.clear();
+        int [] arr = this.presenter.getPreference().getHighScores();
+        for(int i = arr.length-1; i>=0; i--){
+            this.score.add(new Score(arr[i]));
+        }
+        this.notifyDataSetChanged();
+    }
+
     @Override
     public int getCount() {
         return this.score.size();

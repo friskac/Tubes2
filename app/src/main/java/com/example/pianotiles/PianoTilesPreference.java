@@ -3,6 +3,9 @@ package com.example.pianotiles;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -16,7 +19,7 @@ public class PianoTilesPreference {
     protected String KEY_HIGH_SCORE = "HIGH_SCORE";
 
     public PianoTilesPreference(Context context) {
-        this.sharedPref = context.getSharedPreferences(NAMA_SHARED_PREF, 0);
+        this.sharedPref = context.getSharedPreferences(NAMA_SHARED_PREF, Context.MODE_PRIVATE);
         this.loadDummyHighScore();
     }
 
@@ -68,11 +71,13 @@ public class PianoTilesPreference {
      * @param newHighScore
      */
     public void insertNewHighScore(int newHighScore){
+//        Log.d("debug preference", "Inserting new score: "+newHighScore);
         Set<String> set = this.sharedPref.getStringSet(KEY_HIGH_SCORE, new HashSet<>());
         int [] highScores;
         if( !set.isEmpty()){
             //Mengambil list highscore dari shared preference
             highScores = new int [set.size()+1];
+
             Iterator<String> setIterator = set.iterator();
             int counter = 0;
 
@@ -84,14 +89,12 @@ public class PianoTilesPreference {
                 counter++;
             }
 
-            //Ambil index yang berisi nilai 0 pada list highscore
-            int idxValZero = Arrays.binarySearch(highScores, 0);
-
-            //Isi nilai baru di index yang berisi nilai 0
-            highScores[idxValZero] = newHighScore;
+            //Isi nilai baru di index paling akhir
+            highScores[highScores.length-1] = newHighScore;
 
             //Sort agar terurut dari kecil ke besar
             Arrays.sort(highScores);
+
             set = new HashSet<>();
 
             //Ambil nilai dari index 1 sampai dengan highscore.length-1 (n nilai terbesar dari n+1 nilai)
@@ -106,8 +109,7 @@ public class PianoTilesPreference {
 
         SharedPreferences.Editor editor = this.sharedPref.edit();
         editor.putStringSet(KEY_HIGH_SCORE, set);
+        editor.commit();
     }
-
-
 
 }

@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
                 //Remove the gameplay fragment from fragment list
                 this.fragmentsList.remove(this.gamePlayFragment);
                 //Create new instance of gameplay fragment
-                this.gamePlayFragment = GamePlayFragment.newInstance(savedBundleInstance);
+                this.gamePlayFragment = GamePlayFragment.newInstance(this.presenter, savedBundleInstance);
                 this.fragmentsList.add(this.gamePlayFragment);
                 selectedFragment = this.gamePlayFragment;
                 break;
@@ -149,6 +149,11 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         }
 
         ft.commit();
+    }
+
+    @Override
+    public void updateScore() {
+        this.scoreFragment.updateScore();
     }
 
 

@@ -2,6 +2,7 @@ package com.example.pianotiles;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -39,6 +40,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     private ArrayList<Tiles> listTile;
     private UIThreadHandler uiHandler;
     private ThreadHandler threadHandler;
+    Presenter presenter;
 
     private TextView tvScore;
     private ImageView ivCanvas;
@@ -64,8 +66,9 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     }
 
 
-    public static GamePlayFragment newInstance(Bundle args) {
+    public static GamePlayFragment newInstance(Presenter presenter, Bundle args) {
         GamePlayFragment fragment = new GamePlayFragment();
+        fragment.presenter = presenter;
         fragment.setArguments(args);
         return fragment;
     }
@@ -250,6 +253,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             int bottom = tile.bottom();
             int top = tile.top();
 
+
             bg.mutate().setBounds(left, top, right, bottom);
             bg.draw(this.gameCanvas);
         }
@@ -338,8 +342,17 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
         Iterator<Tiles> iterator = this.listTile.iterator();
 
+        Tiles prevTile = null;
+
         while (this.listTile.size() > 0 && iterator.hasNext()) {
             Tiles currTile = iterator.next();
+
+            //Cek tile sebelumnya sudah pernah disentuh atau belum, jika belum pernah, tile yang saat ini disentuh tidak akan diubah statusnya
+            if(prevTile != null){
+                if(pressed && !prevTile.isPressed()){
+                    continue;
+                }
+            }
 
             if (pressed) {
                 //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
@@ -362,9 +375,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             } else {
                 //Merupakan event ACTION_POINTER_UP atau ACTION_UP
 
-                //Cek koordinat x dari event sentuh berada di dalam area antara left dan right dari tiles
-                //Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
-                //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
                 if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
                         && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
                         && (currTile.right() >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
@@ -373,17 +383,23 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                 ) {
                     //set warna dari tile
                     currTile.setColor(color);
+                    //set state tiles sudah tidak disentuh lagi (released)
                     currTile.setReleased(true);
 
                 }
             }
+            prevTile = currTile;
         }
     }
 
     public void showGameDialog() {
         Bundle args = new Bundle();
         args.putInt("highscore", this.currScore);
-        this.popupScoreFragment = PopupScoreFragment.newInstance(args);
+        this.popupScoreFragment = PopupScoreFragment.newInstance(this.presenter, args);
+
+        //Reference: https://stackoverflow.com/questions/44018711/how-to-dialogfragment-disable-click-outside-on-android
+        //Set dialog agar tidak hilang ketika dilakukan touch pada area diluar dialog
+        this.popupScoreFragment.setCancelable(false);
         this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
 
     }
@@ -398,7 +414,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             this.threadHandler.setStopped(true);
         }
     }
-
 
     private class MyDetector extends GestureDetector.SimpleOnGestureListener {
         @Override

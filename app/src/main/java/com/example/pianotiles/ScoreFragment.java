@@ -26,6 +26,7 @@ public class ScoreFragment extends Fragment{
         scoreFragment.presenter = presenter;
         return scoreFragment;
     }
+
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_highscore, container, false);
@@ -33,5 +34,9 @@ public class ScoreFragment extends Fragment{
         this.lvScore = view.findViewById(R.id.list_score);
         this.lvScore.setAdapter(scoreFragment.adapter);
         return view;
+    }
+
+    public void updateScore(){
+        this.adapter.updateScore();
     }
 }

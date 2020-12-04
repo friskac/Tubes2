@@ -2,6 +2,7 @@ package com.example.pianotiles;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,14 +16,16 @@ import com.example.pianotiles.databinding.FragmentDialogBinding;
 
 public class PopupScoreFragment extends DialogFragment implements View.OnClickListener {
     FragmentListener listener;
+    Presenter presenter;
     private TextView tvFinalScore;
     private Button btnPlayAgain;
     private Button btnExitToMenu;
 
     public PopupScoreFragment(){}
 
-    public static PopupScoreFragment newInstance(Bundle args) {
+    public static PopupScoreFragment newInstance(Presenter presenter, Bundle args) {
         PopupScoreFragment fragment = new PopupScoreFragment();
+        fragment.presenter = presenter;
         fragment.setArguments(args);
         return fragment;
     }
@@ -42,6 +45,11 @@ public class PopupScoreFragment extends DialogFragment implements View.OnClickLi
         if(getArguments() != null){
             int highScore = getArguments().getInt("highscore");
             this.tvFinalScore.setText(highScore+"");
+            Log.d("debug popup", "presenter is "+this.presenter);
+            if(this.presenter != null){
+                this.presenter.getPreference().insertNewHighScore(highScore);
+                this.listener.updateScore();
+            }
         }
 
         return view;
