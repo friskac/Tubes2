@@ -8,35 +8,30 @@ import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.content.Intent;
 
 import androidx.fragment.app.Fragment;
 
 public class ScoreFragment extends Fragment{
-    protected SharedPreferences sp;
-    protected GamePlayFragment gfp;
-    protected int score;
-    protected int highScore;
-    protected TextView tvScore;
+    private ListView lvScore;
+    private AdapterHighScore adapter;
+    private Presenter presenter;
+    private static ScoreFragment scoreFragment;
 
-    public ScoreFragment(){
-
+    public static ScoreFragment newInstance(Presenter presenter, AdapterHighScore adapter){
+        scoreFragment = new ScoreFragment();
+        scoreFragment.adapter = adapter;
+        scoreFragment.presenter = presenter;
+        return scoreFragment;
     }
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         View view = inflater.inflate(R.layout.fragment_highscore, container, false);
 
-        this.tvScore = view.findViewById(R.id.list_score);
+        this.lvScore = view.findViewById(R.id.list_score);
+        this.lvScore.setAdapter(scoreFragment.adapter);
         return view;
     }
-
-//    private int Display(){
-//        SharedPreferences preferences =
-//                PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-//        int myInt = preferences.getInt("myHighScore", -1);
-//        username.setText("High Score : " + myInt);
-//    }
-
-
 }

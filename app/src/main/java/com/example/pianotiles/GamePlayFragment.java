@@ -202,7 +202,13 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         Rect imageBounds = this.gameCanvas.getClipBounds();
         backGroundPicture.setBounds(imageBounds);
         backGroundPicture.draw(gameCanvas);
-
+        int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
+        this.strokePaint.setColor(mColor);
+        int lineX = ivCanvas.getWidth()/4;
+        int lineHeight = ivCanvas.getHeight();
+        for(int i = 1; i<4; i++){
+            gameCanvas.drawLine(lineX*i, 0, lineX*i, lineHeight, strokePaint);
+        }
         //force draw
         this.ivCanvas.invalidate();
     }

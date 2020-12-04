@@ -23,12 +23,14 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
     ScoreFragment scoreFragment;
     SettingFragment settingFragment;
     PopupScoreFragment popupScoreFragment;
+    PianoTilesPreference pianoTilesPreference;
 
     //Fragment history
     Stack<FragmentType> states;
     FragmentType lastState;
 
-
+    Presenter presenter;
+    AdapterHighScore adapter;
     //ArrayList to put fragments
     //implementation for hiding all other fragments can be easily applied using iterator
     protected ArrayList<Fragment> fragmentsList;
@@ -43,6 +45,12 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
 
         this.fragmentsList = new ArrayList<>();
 
+        //Instantiate Storage, Presenter, and Adapter
+        this.pianoTilesPreference = new PianoTilesPreference(this);
+        this.presenter = new Presenter(this.pianoTilesPreference);
+        this.adapter = new AdapterHighScore(this, this.presenter);
+
+
         //Instantiate all fragments and add it to list
         this.gamePlayFragment = new GamePlayFragment();
         this.fragmentsList.add(this.gamePlayFragment);
@@ -50,7 +58,7 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         this.fragmentsList.add(this.lobbyFragment);
         this.settingFragment = new SettingFragment();
         this.fragmentsList.add(this.settingFragment);
-        this.scoreFragment = new ScoreFragment();
+        this.scoreFragment = ScoreFragment.newInstance(this.presenter,this.adapter);
         this.fragmentsList.add(this.scoreFragment);
         this.popupScoreFragment = new PopupScoreFragment();
         this.fragmentsList.add(this.popupScoreFragment);
