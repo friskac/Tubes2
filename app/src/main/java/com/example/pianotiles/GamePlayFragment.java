@@ -31,13 +31,17 @@ import com.example.pianotiles.databinding.FragmentGameplayBinding;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class GamePlayFragment extends Fragment implements View.OnClickListener, View.OnTouchListener {
     final static int PAINT_STROKE_SIZE = 10;
+    final static int MAX_TILES_IN_LIST = 8;
     private Song mockSong;
     private Tiles tile;
     private PopupScoreFragment popupScoreFragment;
     private ArrayList<Tiles> listTile;
+    private ArrayList<Note> fullListNote;
     private UIThreadHandler uiHandler;
     private ThreadHandler threadHandler;
     Presenter presenter;
@@ -54,6 +58,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
     private boolean isCanvasInitiated;
     private int currScore;
+
+
+    //Reference: https://stackoverflow.com/questions/3392139/thread-synchronization-java
+    private ReentrantLock lock;
+    private Condition condition;
 
     private FragmentListener listener;
 
@@ -90,6 +99,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
         this.mDetector = new GestureDetector(new MyDetector());
         this.ivCanvas.setOnTouchListener(this);
+        mockSong = MockSong.getMockSong();
+        this.fullListNote = mockSong.getNotes();
+        this.listTile = new ArrayList<>();
+        this.lock = new ReentrantLock();
+        this.condition = lock.newCondition();
 
         this.uiHandler = new UIThreadHandler(this);
 
@@ -116,7 +130,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             this.btnStart.setVisibility(View.GONE);
             this.llBtnStart.setVisibility(View.GONE);
             this.fillTheList();
-            threadHandler = new ThreadHandler(this.uiHandler, this.ivCanvas.getHeight());
+            threadHandler = new ThreadHandler(this.uiHandler, this.lock, this.ivCanvas.getHeight());
             threadHandler.nonBlocking();
         }
     }
@@ -143,56 +157,66 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      * Mengisi list tiles dengan tiles dummy
      */
     public void fillTheList() {
-        this.listTile = new ArrayList<>();
-        int width = this.ivCanvas.getWidth() / 4;
-        int height = this.ivCanvas.getHeight() / 5;
-        int spacing = this.ivCanvas.getHeight() / 20;
-        int initialSpace = this.ivCanvas.getHeight();
-        Log.d("debug", "height : " + height);
-        Log.d("debug", "width : " + width);
+        this.lock.lock();
+        //melakukan lock agar ketika menambahkan tile baru tidak akan muncul exception
+        //karena melakukan modifikasi pada array list tile
+        try {
+            Log.d("debug fill list", "List size : " + this.listTile.size());
+            int width = this.ivCanvas.getWidth() / 4;
+            int height = this.ivCanvas.getHeight() / 5;
+            int spacing = this.ivCanvas.getHeight() / 20;
+            int initialSpace = this.ivCanvas.getHeight();
+//        Log.d("debug", "height : " + height);
+//        Log.d("debug", "width : " + width);
 
-        Song mockSong = MockSong.getMockSong();
-        Iterator<Note> iterator = mockSong.getNotes().iterator();
-        Tiles prevTile = null;
-        while (iterator.hasNext()) {
-            Tiles currTile;
-            if (prevTile == null) {
-                Note currNote = iterator.next();
-                int barIdx = currNote.getxBarIndex();
-                int x = (barIdx * width);
+            Tiles prevTile = null;
+            if (this.listTile.size() > 0) {
+                prevTile = this.listTile.get(this.listTile.size() - 1);
+            }
+
+            while (this.listTile.size() <= MAX_TILES_IN_LIST && fullListNote.size() > 0) {
+                Tiles currTile;
+                if (prevTile == null) {
+                    Note currNote = fullListNote.remove(0);
+                    int barIdx = currNote.getxBarIndex();
+                    int x = (barIdx * width);
 
 //                int y = (int) (Math.floor(currNote.getStartTime() / 100000) - initialSpace);
 //                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
 
-                int y = 0 - initialSpace;
-                int tileHeight = height;
+                    int y = 0 - initialSpace;
+                    int tileHeight = height;
 
-                if (tileHeight < 1) {
-                    tileHeight = height;
-                }
-                int tileWidth = width;
-                currTile = new Tiles(x, y, tileWidth, tileHeight);
-            } else {
-                Note currNote = iterator.next();
-                int barIdx = currNote.getxBarIndex();
-                int x = (barIdx * width);
+                    if (tileHeight < 1) {
+                        tileHeight = height;
+                    }
+                    int tileWidth = width;
+                    currTile = new Tiles(x, y, tileWidth, tileHeight);
+                } else {
+                    Note currNote = fullListNote.remove(0);
+                    int barIdx = currNote.getxBarIndex();
+                    int x = (barIdx * width);
 //                int y = (int) (Math.floor(currNote.getStartTime() / 100000))-prevTile.top()-spacing;
-                int y = prevTile.top() - spacing;
+                    int y = prevTile.top() - spacing;
 //                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
-                int tileHeight = height;
+                    int tileHeight = height;
 
-                if (tileHeight < 1) {
-                    tileHeight = height;
+                    if (tileHeight < 1) {
+                        tileHeight = height;
+                    }
+                    int tileWidth = width;
+                    currTile = new Tiles(x, y, tileWidth, tileHeight);
                 }
-                int tileWidth = width;
-                currTile = new Tiles(x, y, tileWidth, tileHeight);
-            }
 
-            this.listTile.add(currTile);
-            prevTile = currTile;
+                this.listTile.add(currTile);
+                prevTile = currTile;
+            }
+        } finally {
+            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
+            lock.unlock();
         }
 
-        Log.d("debug fill list", "List size : " + this.listTile.size());
+//        Log.d("debug fill list", "List size : " + this.listTile.size());
     }
 
     /**
@@ -207,10 +231,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         backGroundPicture.draw(gameCanvas);
         int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
         this.strokePaint.setColor(mColor);
-        int lineX = ivCanvas.getWidth()/4;
+        int lineX = ivCanvas.getWidth() / 4;
         int lineHeight = ivCanvas.getHeight();
-        for(int i = 1; i<4; i++){
-            gameCanvas.drawLine(lineX*i, 0, lineX*i, lineHeight, strokePaint);
+        for (int i = 1; i < 4; i++) {
+            gameCanvas.drawLine(lineX * i, 0, lineX * i, lineHeight, strokePaint);
         }
         //force draw
         this.ivCanvas.invalidate();
@@ -239,27 +263,36 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         //Reset ulang ImageView jadi background kosong
         this.resetCanvas();
 
-        //untuk setiap tile dibuat drawablenya
-        for (int i = 0; i < this.listTile.size(); i++) {
-            Tiles tile = listTile.get(i);
+        this.lock.lock();
+        //melakukan lock agar ketika memproses tile tidak akan muncul exception
+        //karena melakukan modifikasi pada array list tile
+        try {
+            //untuk setiap tile dibuat drawablenya
+            for (int i = 0; i < this.listTile.size(); i++) {
+                Tiles tile = listTile.get(i);
 
-            Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
+                Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
 
-            //set color berdasarkan status dari tile
-            bg.mutate().setTint(tile.color);
+                //set color berdasarkan status dari tile
+                bg.mutate().setTint(tile.color);
 
-            int left = tile.left();
-            int right = tile.right();
-            int bottom = tile.bottom();
-            int top = tile.top();
+                int left = tile.left();
+                int right = tile.right();
+                int bottom = tile.bottom();
+                int top = tile.top();
 
 
-            bg.mutate().setBounds(left, top, right, bottom);
-            bg.draw(this.gameCanvas);
+                bg.mutate().setBounds(left, top, right, bottom);
+                bg.draw(this.gameCanvas);
+            }
+
+        } finally {
+            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
+            lock.unlock();
         }
-
         this.ivCanvas.invalidate();
     }
+
 
     /**
      * Implementasi onTouch listener untuk ImageView yang digunakan dalam permainan
@@ -341,54 +374,61 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      */
     public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
         Iterator<Tiles> iterator = this.listTile.iterator();
-
         Tiles prevTile = null;
 
-        while (this.listTile.size() > 0 && iterator.hasNext()) {
-            Tiles currTile = iterator.next();
+        this.lock.lock();
+        //melakukan lock agar ketika memproses tile tidak akan muncul exception
+        //karena melakukan modifikasi pada array list tile
+        try {
+            while (this.listTile.size() > 0 && iterator.hasNext()) {
+                Tiles currTile = iterator.next();
 
-            //Cek tile sebelumnya sudah pernah disentuh atau belum, jika belum pernah, tile yang saat ini disentuh tidak akan diubah statusnya
-            if(prevTile != null){
-                if(pressed && !prevTile.isPressed()){
-                    continue;
-                }
-            }
-
-            if (pressed) {
-                //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
-
-                //Cek koordinat sentuh berada di dalam area tiles
-                if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
-
-                    //set warna dari tile
-                    currTile.setColor(color);
-                    //set state tiles pernah disentuh
-                    currTile.setPressed(true);
-
-                    //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
-                    //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
-                    if (currTile.isPressed() && !currTile.isReleased()) {
-                        this.currScore += 10;
-                        this.tvScore.setText(this.currScore + "");
+                //Cek tile sebelumnya sudah pernah disentuh atau belum, jika belum pernah, tile yang saat ini disentuh tidak akan diubah statusnya
+                if (prevTile != null) {
+                    if (pressed && !prevTile.isPressed()) {
+                        continue;
                     }
                 }
-            } else {
-                //Merupakan event ACTION_POINTER_UP atau ACTION_UP
 
-                if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
-                        && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
-                        && (currTile.right() >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
-                        && (currTile.bottom() >= coords.y)//Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
-                    //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
-                ) {
-                    //set warna dari tile
-                    currTile.setColor(color);
-                    //set state tiles sudah tidak disentuh lagi (released)
-                    currTile.setReleased(true);
+                if (pressed) {
+                    //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
 
+                    //Cek koordinat sentuh berada di dalam area tiles
+                    if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
+
+                        //set warna dari tile
+                        currTile.setColor(color);
+                        //set state tiles pernah disentuh
+                        currTile.setPressed(true);
+
+                        //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
+                        //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
+                        if (currTile.isPressed() && !currTile.isReleased()) {
+                            this.currScore += 10;
+                            this.tvScore.setText(this.currScore + "");
+                        }
+                    }
+                } else {
+                    //Merupakan event ACTION_POINTER_UP atau ACTION_UP
+
+                    if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
+                            && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
+                            && (currTile.right() >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
+                            && (currTile.bottom() >= coords.y)//Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
+                        //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
+                    ) {
+                        //set warna dari tile
+                        currTile.setColor(color);
+                        //set state tiles sudah tidak disentuh lagi (released)
+                        currTile.setReleased(true);
+
+                    }
                 }
+                prevTile = currTile;
             }
-            prevTile = currTile;
+        } finally {
+            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
+            lock.unlock();
         }
     }
 
