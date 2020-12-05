@@ -373,13 +373,13 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      * @param pressed state bernilai true untuk event ACTION_POINTER_DOWN atau ACTION_DOWN dan bernilai false untuk event ACTION_POINTER_UP atau ACTION_UP
      */
     public void recolorTile(MotionEvent.PointerCoords coords, int color, boolean pressed) {
-        Iterator<Tiles> iterator = this.listTile.iterator();
         Tiles prevTile = null;
 
         this.lock.lock();
         //melakukan lock agar ketika memproses tile tidak akan muncul exception
         //karena melakukan modifikasi pada array list tile
         try {
+            Iterator<Tiles> iterator = this.listTile.iterator();
             while (this.listTile.size() > 0 && iterator.hasNext()) {
                 Tiles currTile = iterator.next();
 

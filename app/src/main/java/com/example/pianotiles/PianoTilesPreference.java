@@ -32,7 +32,7 @@ public class PianoTilesPreference {
             SharedPreferences.Editor editor = this.sharedPref.edit();
             Set<String> valueSet = new HashSet<>();
             for (int i = 0; i < 5; i++) {
-                valueSet.add((i * 100) + "");
+                valueSet.add((i * 10) + "");
             }
             editor.putStringSet(KEY_HIGH_SCORE, valueSet);
             editor.putBoolean(DUMMY_SCORE_IS_LOADED, true);

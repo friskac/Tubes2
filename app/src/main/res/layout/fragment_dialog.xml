@@ -45,7 +45,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Play Again"
+                android:text="Retry"
                 android:layout_weight="1"
                 android:id="@+id/btn_playagain"
                 android:fontFamily="casual"
