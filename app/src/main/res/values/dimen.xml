@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="title">30sp</dimen>
-    <dimen name="score">20sp</dimen>
-    <dimen name="score2">30sp</dimen>
+    <dimen name="title">60sp</dimen>
+    <dimen name="score">30sp</dimen>
+    <dimen name="score2">20sp</dimen>
 </resources>

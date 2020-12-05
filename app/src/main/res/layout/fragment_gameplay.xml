@@ -14,17 +14,18 @@
         android:layout_weight="1"/>
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/rounded">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Score:"
-            android:textSize="@dimen/score"
-            android:background="@color/lightYellow"
+            android:fontFamily="casual"
+            android:textSize="@dimen/score2"
             android:padding="10dp"
             />
 
@@ -34,8 +35,7 @@
             android:layout_height="wrap_content"
             android:padding="10dp"
             android:text="000"
-            android:textSize="@dimen/score"
-            android:background="@color/lightYellow"
+            android:textSize="@dimen/score2"
             android:textStyle="bold"/>
 
     </LinearLayout>
@@ -53,7 +53,8 @@
             android:id="@+id/btn_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start"/>
+            android:text="Start"
+            android:fontFamily="casual"/>
     </LinearLayout>
 
 </RelativeLayout>

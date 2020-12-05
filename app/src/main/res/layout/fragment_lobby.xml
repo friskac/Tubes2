@@ -4,63 +4,85 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:background="@drawable/bacjground"
-    >
-    <TextView
+
+    android:background="@drawable/bacjground">
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textAlignment="center"
-        android:textSize="@dimen/title"
-        android:padding="20sp"/>
+        android:orientation="vertical"
+        android:layout_margin="50sp">
 
-    <Button
-        android:id="@+id/btn_play"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:layout_margin="5dp"
-        android:backgroundTint="@color/purple_200"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:drawableLeft="@drawable/ic_play"
-        android:text="Play"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAlignment="center"
+            android:textSize="@dimen/title"
+            android:fontFamily="casual"
+            android:padding="15sp"/>
 
-    <Button
-        android:id="@+id/btn_score"
-        android:layout_below="@+id/btn_play"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:layout_margin="5dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:backgroundTint="@color/violet"
-        android:drawableLeft="@drawable/ic_score"
-        android:text="HighScore"
-       />
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/btn_setting"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:layout_margin="5dp"
-        android:layout_below="@+id/btn_setting"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:backgroundTint="@color/plum"
-        android:drawableLeft="@drawable/ic_setting"
-        android:text="setting"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_margin="50sp">
 
-    <Button
-        android:id="@+id/btn_exit"
-        android:layout_width="250dp"
-        android:layout_height="60dp"
-        android:layout_margin="5dp"
-        android:layout_below="@+id/btn_score"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:backgroundTint="@color/thistle"
-        android:drawableLeft="@drawable/ic_exit"
-        android:text="exit"
-        />
+        <Button
+            android:id="@+id/btn_play"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:layout_margin="5dp"
+            android:fontFamily="casual"
+            android:backgroundTint="@color/purple_200"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:drawableLeft="@drawable/ic_play"
+            android:text="Play"/>
+
+        <Button
+            android:id="@+id/btn_score"
+            android:layout_below="@+id/btn_play"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:layout_margin="5dp"
+            android:fontFamily="casual"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:backgroundTint="@color/violet"
+            android:drawableLeft="@drawable/ic_score"
+            android:text="HighScore"
+            />
+
+        <Button
+            android:id="@+id/btn_setting"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:layout_margin="5dp"
+            android:fontFamily="casual"
+            android:layout_below="@+id/btn_setting"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:backgroundTint="@color/plum"
+            android:drawableLeft="@drawable/ic_setting"
+            android:text="setting"/>
+
+        <Button
+            android:id="@+id/btn_exit"
+            android:layout_width="250dp"
+            android:layout_height="60dp"
+            android:layout_margin="5dp"
+            android:fontFamily="casual"
+            android:layout_below="@+id/btn_score"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentRight="true"
+            android:backgroundTint="@color/thistle"
+            android:drawableLeft="@drawable/ic_exit"
+            android:text="exit"
+            />
+
+    </LinearLayout>
 </LinearLayout>

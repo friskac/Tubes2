@@ -18,14 +18,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_gravity="center"
-            >
+            android:layout_gravity="center">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/score"
-                android:text="Score: "
+                android:text="Score"
+                android:fontFamily="casual"
                 android:textSize="@dimen/score"/>
 
             <TextView
@@ -48,6 +48,7 @@
                 android:text="Play Again"
                 android:layout_weight="1"
                 android:id="@+id/btn_playagain"
+                android:fontFamily="casual"
                 android:layout_margin="15sp"
                 android:backgroundTint="@color/mid_blue"/>
 
@@ -57,6 +58,7 @@
                 android:text="Exit"
                 android:layout_weight="1"
                 android:id="@+id/btn_exitondialog"
+                android:fontFamily="casual"
                 android:layout_margin="15sp"
                 android:backgroundTint="@color/mid_blue"/>
 
