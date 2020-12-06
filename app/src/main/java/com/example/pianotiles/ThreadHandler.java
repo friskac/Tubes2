@@ -60,6 +60,7 @@ public class ThreadHandler extends java.lang.Thread {
                     if (currTile.bottom() >= sensorBar.getCircleTop() //Nilai bottom dari tile sama dengan atau lebih besar dari nilai top dari lingkaran pada sensor bar
                             && currTile.left() <= sensorBar.getCircleLeft() //Nilai left dari tile sama dengan atau lebih kecil dari nilai left dari lingkaran pada sensor bar
                             && currTile.right() >= sensorBar.getCircleRight() //Nilai right dari tile sama dengan atau lebih dari nilai right dari lingkaran pada sensor bar
+                            && !currTile.isPressed() //hanya diproses sensor jika tile belum pernah ditekan
                     ) {
                         //Ubah state tile jadi sudah pernah ditekan dan sudah dilepaskan
                         currTile.setPressed(true);

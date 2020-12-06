@@ -53,7 +53,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      final static int TAP_INCREMENT_TYPE = 0;
      final static int SENSOR_INCREMENT_TYPE = 1;
      final static int TAP_SCORE_INCREMENT = 1;
-     final static int SENSOR_SCORE_INCREMENT = 20;
+     final static int SENSOR_SCORE_INCREMENT = 25;
 
     public static final float VALUE_DRIFT = 0.05f;
     public static final float ACCURACY_DRIFT = 0.5f;
