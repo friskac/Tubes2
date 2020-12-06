@@ -21,7 +21,6 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
     LobbyFragment lobbyFragment;
     GamePlayFragment gamePlayFragment;
     ScoreFragment scoreFragment;
-    SettingFragment settingFragment;
     PopupScoreFragment popupScoreFragment;
     PianoTilesPreference pianoTilesPreference;
 
@@ -56,8 +55,6 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
         this.fragmentsList.add(this.gamePlayFragment);
         this.lobbyFragment = new LobbyFragment();
         this.fragmentsList.add(this.lobbyFragment);
-        this.settingFragment = new SettingFragment();
-        this.fragmentsList.add(this.settingFragment);
         this.scoreFragment = ScoreFragment.newInstance(this.presenter,this.adapter);
         this.fragmentsList.add(this.scoreFragment);
         this.popupScoreFragment = new PopupScoreFragment();
@@ -110,9 +107,6 @@ public class MainActivity extends AppCompatActivity implements FragmentListener 
                 this.gamePlayFragment = GamePlayFragment.newInstance(this, this.presenter, savedBundleInstance);
                 this.fragmentsList.add(this.gamePlayFragment);
                 selectedFragment = this.gamePlayFragment;
-                break;
-            case FRAGMENT_SETTING:
-                selectedFragment = this.settingFragment;
                 break;
             case FRAGMENT_LIST_SONG:
                 selectedFragment = null;

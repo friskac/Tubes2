@@ -54,21 +54,7 @@
             android:layout_alignParentRight="true"
             android:backgroundTint="@color/violet"
             android:drawableLeft="@drawable/ic_score"
-            android:text="HighScore"
-            />
-
-        <Button
-            android:id="@+id/btn_setting"
-            android:layout_width="250dp"
-            android:layout_height="60dp"
-            android:layout_margin="5dp"
-            android:fontFamily="casual"
-            android:layout_below="@+id/btn_setting"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentRight="true"
-            android:backgroundTint="@color/plum"
-            android:drawableLeft="@drawable/ic_setting"
-            android:text="setting"/>
+            android:text="HighScore"/>
 
         <Button
             android:id="@+id/btn_exit"

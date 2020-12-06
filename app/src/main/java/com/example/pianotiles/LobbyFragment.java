@@ -27,7 +27,6 @@ public class LobbyFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_lobby, container, false);
         this.btnPlay = view.findViewById(R.id.btn_play);
         this.btnHS = view.findViewById(R.id.btn_score);
-        this.btnSetting = view.findViewById(R.id.btn_setting);
         this.btnExit = view.findViewById(R.id.btn_exit);
 
         this.btnPlay.setOnClickListener(new View.OnClickListener() {
@@ -41,13 +40,6 @@ public class LobbyFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 listener.changePage(FragmentType.FRAGMENT_HIGH_SCORE, false, null);
-            }
-        });
-
-        this.btnSetting.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                listener.changePage(FragmentType.FRAGMENT_SETTING, false, null);
             }
         });
 
