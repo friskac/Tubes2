@@ -10,17 +10,26 @@ import android.graphics.Paint;
 import android.graphics.Picture;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
 
 import androidx.constraintlayout.solver.widgets.Rectangle;
@@ -31,35 +40,62 @@ import com.example.pianotiles.databinding.FragmentGameplayBinding;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class GamePlayFragment extends Fragment implements View.OnClickListener, View.OnTouchListener {
-    final static int PAINT_STROKE_SIZE = 10;
+import static android.hardware.SensorManager.SENSOR_DELAY_GAME;
+
+public class GamePlayFragment extends Fragment implements View.OnClickListener, View.OnTouchListener, SensorEventListener {
+
     final static int MAX_TILES_IN_LIST = 8;
-    private Song mockSong;
-    private Tiles tile;
-    private PopupScoreFragment popupScoreFragment;
+
+    //Model and lists
     private ArrayList<Tiles> listTile;
-    private ArrayList<Note> fullListNote;
+    private ArrayList<Tiles> fullTileList;
     private UIThreadHandler uiHandler;
     private ThreadHandler threadHandler;
-    Presenter presenter;
+    private Presenter presenter;
+    private int NORMAL_SCORE_INCREMENT = 1;
+    private int PITCH_SCORE_INCREMENT = 10;
+    private int scoreIncrement;
 
+    //View related attributes
+    private PopupScoreFragment popupScoreFragment;
     private TextView tvScore;
+    private TextView tvScoreIncrement;
     private ImageView ivCanvas;
     private Button btnStart;
     private LinearLayout llBtnStart;
+    private int currScore;
+    private Context context;
 
+    //Attributes for Canvas
     private Canvas gameCanvas;
     private Paint strokePaint;
-
-    private GestureDetector mDetector;
-
     private boolean isCanvasInitiated;
-    private int currScore;
 
 
+    //TouchListener related attributes
+    private GestureDetector mDetector;
+    private MotionEvent.PointerCoords pointerCoords;
+
+
+    //Attributes for Sensor
+    public static final float VALUE_DRIFT = 0.05f;
+    public static final float ACCURACY_DRIFT = 0.1f;
+    private SensorManager mSensorManager;
+    private float[] accelerometerReadings;
+    private float[] magnetometerReadings;
+
+    private Sensor accelerometer;
+    private Sensor magnetometer;
+
+    private float prevAzimuth;
+    private float prevPitch;
+    private float prevRoll;
+
+    //Thread related attributes
     //Reference: https://stackoverflow.com/questions/3392139/thread-synchronization-java
     private ReentrantLock lock;
     private Condition condition;
@@ -67,7 +103,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     private FragmentListener listener;
 
     public GamePlayFragment() {
-
     }
 
     public ArrayList<Tiles> getTileList() {
@@ -75,9 +110,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     }
 
 
-    public static GamePlayFragment newInstance(Presenter presenter, Bundle args) {
+    public static GamePlayFragment newInstance(Context context, Presenter presenter, Bundle args) {
         GamePlayFragment fragment = new GamePlayFragment();
         fragment.presenter = presenter;
+        fragment.context = context;
         fragment.setArguments(args);
         return fragment;
     }
@@ -92,20 +128,39 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
         this.tvScore = binding.tvScore;
         this.ivCanvas = binding.ivCanvas;
+        this.tvScoreIncrement = binding.tvScoreIncrement;
 
         this.llBtnStart = binding.llstart;
         this.btnStart = binding.btnStart;
         this.btnStart.setOnClickListener(this);
-
         this.mDetector = new GestureDetector(new MyDetector());
         this.ivCanvas.setOnTouchListener(this);
-        mockSong = MockSong.getMockSong();
-        this.fullListNote = mockSong.getNotes();
+
         this.listTile = new ArrayList<>();
+        this.pointerCoords = null;
+
         this.lock = new ReentrantLock();
         this.condition = lock.newCondition();
 
         this.uiHandler = new UIThreadHandler(this);
+
+        this.mSensorManager = (SensorManager) this.context.getSystemService(Context.SENSOR_SERVICE);
+        if (this.mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+            this.accelerometer = this.mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        if (this.mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null) {
+            this.magnetometer = this.mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        }
+
+        this.accelerometerReadings = new float[3];
+        this.magnetometerReadings = new float[3];
+
+        this.scoreIncrement = NORMAL_SCORE_INCREMENT;
+
+        prevAzimuth = 0;
+        prevPitch = 0;
+        prevRoll = 0;
 
         return view;
     }
@@ -136,165 +191,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     }
 
     /**
-     * Inisiasi canvas yang akan digunakan dalam permainan
-     */
-    private void initiateCanvas() {
-        // 1. Create Bitmap
-        Bitmap mBitmap = Bitmap.createBitmap(this.ivCanvas.getWidth(), this.ivCanvas.getHeight(), Bitmap.Config.ARGB_8888);
-        // 2. Associate the bitmap to the ImageView.
-        this.ivCanvas.setImageBitmap(mBitmap);
-        // 3. Create a Canvas with the bitmap.
-        this.gameCanvas = new Canvas(mBitmap);
-        // new paint for stroke + style (Paint.Style.STROKE)
-        this.strokePaint = new Paint();
-        this.strokePaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        //resetCanvas
-        this.resetCanvas();
-        this.isCanvasInitiated = true;
-    }
-
-    /**
-     * Mengisi list tiles dengan tiles dummy
-     */
-    public void fillTheList() {
-        this.lock.lock();
-        //melakukan lock agar ketika menambahkan tile baru tidak akan muncul exception
-        //karena melakukan modifikasi pada array list tile
-        try {
-            Log.d("debug fill list", "List size : " + this.listTile.size());
-            int width = this.ivCanvas.getWidth() / 4;
-            int height = this.ivCanvas.getHeight() / 5;
-            int spacing = this.ivCanvas.getHeight() / 20;
-            int initialSpace = this.ivCanvas.getHeight();
-//        Log.d("debug", "height : " + height);
-//        Log.d("debug", "width : " + width);
-
-            Tiles prevTile = null;
-            if (this.listTile.size() > 0) {
-                prevTile = this.listTile.get(this.listTile.size() - 1);
-            }
-
-            while (this.listTile.size() <= MAX_TILES_IN_LIST && fullListNote.size() > 0) {
-                Tiles currTile;
-                if (prevTile == null) {
-                    Note currNote = fullListNote.remove(0);
-                    int barIdx = currNote.getxBarIndex();
-                    int x = (barIdx * width);
-
-//                int y = (int) (Math.floor(currNote.getStartTime() / 100000) - initialSpace);
-//                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
-
-                    int y = 0 - initialSpace;
-                    int tileHeight = height;
-
-                    if (tileHeight < 1) {
-                        tileHeight = height;
-                    }
-                    int tileWidth = width;
-                    currTile = new Tiles(x, y, tileWidth, tileHeight);
-                } else {
-                    Note currNote = fullListNote.remove(0);
-                    int barIdx = currNote.getxBarIndex();
-                    int x = (barIdx * width);
-//                int y = (int) (Math.floor(currNote.getStartTime() / 100000))-prevTile.top()-spacing;
-                    int y = prevTile.top() - spacing;
-//                int tileHeight = (int) ((Math.floor(currNote.getNoteDuration() / 100000)) * height);
-                    int tileHeight = height;
-
-                    if (tileHeight < 1) {
-                        tileHeight = height;
-                    }
-                    int tileWidth = width;
-                    currTile = new Tiles(x, y, tileWidth, tileHeight);
-                }
-
-                this.listTile.add(currTile);
-                prevTile = currTile;
-            }
-        } finally {
-            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
-            lock.unlock();
-        }
-
-//        Log.d("debug fill list", "List size : " + this.listTile.size());
-    }
-
-    /**
-     * Menggambar ulang canvas menjadi background gambar tanpa tile di dalamnya
-     */
-    public void resetCanvas() {
-        //Draw canvas background
-        //Reference: https://stackoverflow.com/questions/2172523/draw-object-image-on-canvas
-        Drawable backGroundPicture = ResourcesCompat.getDrawable(getResources(), R.drawable.bg4, null);
-        Rect imageBounds = this.gameCanvas.getClipBounds();
-        backGroundPicture.setBounds(imageBounds);
-        backGroundPicture.draw(gameCanvas);
-        int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
-        this.strokePaint.setColor(mColor);
-        int lineX = ivCanvas.getWidth() / 4;
-        int lineHeight = ivCanvas.getHeight();
-        for (int i = 1; i < 4; i++) {
-            gameCanvas.drawLine(lineX * i, 0, lineX * i, lineHeight, strokePaint);
-        }
-        //force draw
-        this.ivCanvas.invalidate();
-    }
-
-    public void renderTiles(int x, int y) {
-        int width = this.ivCanvas.getWidth() / 4;
-        int height = this.ivCanvas.getHeight() / 4;
-        this.tile = new Tiles(x, y, width, height);
-        Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
-
-        int left = tile.getX();
-        int right = tile.getX() + tile.getWidth();
-        int bottom = tile.getY();
-        int top = tile.getY() - tile.getHeight();
-        bg.mutate().setBounds(left, top, right, bottom);
-        bg.draw(this.gameCanvas);
-
-        this.ivCanvas.invalidate();
-    }
-
-    /**
-     * Method untuk render ulang tiles yang ada di list
-     */
-    public void renderTiles() {
-        //Reset ulang ImageView jadi background kosong
-        this.resetCanvas();
-
-        this.lock.lock();
-        //melakukan lock agar ketika memproses tile tidak akan muncul exception
-        //karena melakukan modifikasi pada array list tile
-        try {
-            //untuk setiap tile dibuat drawablenya
-            for (int i = 0; i < this.listTile.size(); i++) {
-                Tiles tile = listTile.get(i);
-
-                Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
-
-                //set color berdasarkan status dari tile
-                bg.mutate().setTint(tile.color);
-
-                int left = tile.left();
-                int right = tile.right();
-                int bottom = tile.bottom();
-                int top = tile.top();
-
-
-                bg.mutate().setBounds(left, top, right, bottom);
-                bg.draw(this.gameCanvas);
-            }
-
-        } finally {
-            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
-            lock.unlock();
-        }
-        this.ivCanvas.invalidate();
-    }
-
-
-    /**
      * Implementasi onTouch listener untuk ImageView yang digunakan dalam permainan
      * Alasan dipisah ada yang pake MyDetector sama da yang ga pake:
      * - MyDetector ga bisa deteksi keyRelease, jadi manual lewat switch case ACTION_POINTER_UP sama ACTION_UP
@@ -321,7 +217,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                     return true;
 
                 case MotionEvent.ACTION_DOWN:
-                case MotionEvent.ACTION_POINTER_DOWN:
+//                case MotionEvent.ACTION_POINTER_DOWN:
                     int color2 = ResourcesCompat.getColor(getResources(), R.color.blue, null);
                     recolorTile(pointer, color2, true);
                     return true;
@@ -332,38 +228,171 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         return true;
     }
 
+
+    public void showGameDialog() {
+        Bundle args = new Bundle();
+        args.putInt("highscore", this.currScore);
+        this.popupScoreFragment = PopupScoreFragment.newInstance(this.presenter, args);
+
+        //Reference: https://stackoverflow.com/questions/44018711/how-to-dialogfragment-disable-click-outside-on-android
+        //Set dialog agar tidak hilang ketika dilakukan touch pada area diluar dialog
+        this.popupScoreFragment.setCancelable(false);
+        this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
+
+    }
+
     /**
-     * Method buat process si motion event untuk action event tertentu
-     *
-     * @param debugType
-     * @param event
-     * @return
+     * Metode untuk menghentikan thread ketika dilakukan back press dari gameplay fragment ke lobby
      */
-//    public boolean processMotionEvent(String debugType, MotionEvent event) {
-//        int pointerSize = event.getPointerCount();
-//        Log.d(debugType, "Pointer size: " + pointerSize);
-//        int pointerId;
-//        int pointerIndex;
-//        if (pointerSize > 0) {
-//            pointerIndex = event.getActionIndex();
-//            pointerId = event.getPointerId(pointerIndex);
-//            Log.d(debugType, "Pointer ID: " + pointerId);
-//            MotionEvent.PointerCoords pointer = new MotionEvent.PointerCoords();
-//            event.getPointerCoords(pointerIndex, pointer);
-//            Log.d(debugType, String.format("release [x] : %.3f, [y] : %.3f", pointer.x, pointer.y));
-//            if (isCanvasInitiated) {
-//                if (debugType.equals("touch")) {
-//                    int color = Color.argb(255, 77, 128, 205);
-//                    recolorTile(pointerId, pointer, color, true, false);
-//                } else if (debugType.equals("release")) {
-//                    int color = Color.argb((int) (255 * 0.75), 147, 157, 165);
-//                    recolorTile(pointerId, pointer, color, true, true);
-//                }
-//            }
-//        }
-//
-//        return true;
-//    }
+    public void stopOnHide() {
+        //Reference:https://developer.android.com/reference/android/app/Fragment.html#isHidden()
+        if (isHidden()) {
+            //Cek status fragment hidden atau tidak
+            this.threadHandler.setStopped(true);
+        }
+    }
+
+
+    //##############################################################################################
+    //CANVAS RELATED METHODS
+    //##############################################################################################
+
+    /**
+     * Inisiasi canvas yang akan digunakan dalam permainan
+     */
+    private void initiateCanvas() {
+        // 1. Create Bitmap
+        Bitmap mBitmap = Bitmap.createBitmap(this.ivCanvas.getWidth(), this.ivCanvas.getHeight(), Bitmap.Config.ARGB_8888);
+        // 2. Associate the bitmap to the ImageView.
+        this.ivCanvas.setImageBitmap(mBitmap);
+        // 3. Create a Canvas with the bitmap.
+        this.gameCanvas = new Canvas(mBitmap);
+        // new paint for stroke + style (Paint.Style.STROKE)
+        this.strokePaint = new Paint();
+        this.strokePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        //resetCanvas
+        this.resetCanvas();
+        this.isCanvasInitiated = true;
+        this.fullTileList = MockSong.generateMockTiles(this.ivCanvas.getWidth(), this.ivCanvas.getHeight());
+    }
+
+
+    /**
+     * Menggambar ulang canvas menjadi background gambar tanpa tile di dalamnya
+     */
+    public void resetCanvas() {
+        //Draw canvas background
+        //Reference: https://stackoverflow.com/questions/2172523/draw-object-image-on-canvas
+        Drawable backGroundPicture = ResourcesCompat.getDrawable(getResources(), R.drawable.bg4, null);
+        Rect imageBounds = this.gameCanvas.getClipBounds();
+        backGroundPicture.setBounds(imageBounds);
+        backGroundPicture.draw(gameCanvas);
+        int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
+        this.strokePaint.setColor(mColor);
+
+        int canvasHeight = ivCanvas.getHeight();
+        int lineX = ivCanvas.getWidth() / 4;
+        int lineHeight = canvasHeight;
+        for (int i = 1; i < 4; i++) {
+            gameCanvas.drawLine(lineX * i, 0, lineX * i, lineHeight, strokePaint);
+        }
+
+        //force draw
+        this.ivCanvas.invalidate();
+    }
+
+    public MotionEvent.PointerCoords getLastPointerCoords() {
+        return pointerCoords;
+    }
+
+    /**
+     * Mengisi list tiles dengan tiles dummy
+     */
+    public void fillTheList() {
+        this.lock.lock();
+        //melakukan lock agar ketika menambahkan tile baru tidak akan muncul exception
+        //karena melakukan modifikasi pada array list tile
+        try {
+            Log.d("debug fill list", "List size : " + this.listTile.size());
+            int width = this.ivCanvas.getWidth() / 4;
+            int height = this.ivCanvas.getHeight() / 5;
+            int spacing = this.ivCanvas.getHeight() / 20;
+            int initialSpace = this.ivCanvas.getHeight();
+//        Log.d("debug", "height : " + height);
+//        Log.d("debug", "width : " + width);
+
+            Tiles prevTile = null;
+            if (this.listTile.size() > 0) {
+                prevTile = this.listTile.get(this.listTile.size() - 1);
+            }
+
+            while (this.listTile.size() <= MAX_TILES_IN_LIST && fullTileList.size() > 0) {
+                Tiles currTile;
+                if (prevTile == null) {
+                    currTile = fullTileList.remove(0);
+
+                } else {
+                    currTile = fullTileList.remove(0);
+                    int barIdx = currTile.getIndex();
+                    int x = currTile.left();
+                    int y = prevTile.top() - spacing;
+                    int tileHeight = currTile.getHeight();
+
+                    if (tileHeight < 1) {
+                        tileHeight = height;
+                    }
+                    int tileWidth = width;
+                    currTile = new Tiles(barIdx, x, y, tileWidth, tileHeight);
+                }
+
+                this.listTile.add(currTile);
+                prevTile = currTile;
+            }
+        } finally {
+            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
+            lock.unlock();
+        }
+
+//        Log.d("debug fill list", "List size : " + this.listTile.size());
+    }
+
+    /**
+     * Method untuk render ulang tiles yang ada di list
+     */
+    public void renderTiles() {
+        //Reset ulang ImageView jadi background kosong
+        this.resetCanvas();
+
+        this.lock.lock();
+        //melakukan lock agar ketika memproses tile tidak akan muncul exception
+        //karena melakukan modifikasi pada array list tile
+        try {
+            //untuk setiap tile dibuat drawablenya
+            for (int i = 0; i < this.listTile.size(); i++) {
+                Tiles tile = listTile.get(i);
+
+                Drawable bg = this.getResources().getDrawable(R.drawable.ic_black_rectangle);
+                //set color berdasarkan status dari tile
+                bg.mutate().setTint(tile.color);
+
+                int left = tile.left();
+                int right = tile.right();
+                int bottom = tile.bottom();
+                int top = tile.top();
+
+
+                bg.mutate().setBounds(left, top, right, bottom);
+                bg.draw(this.gameCanvas);
+            }
+
+        } finally {
+            //melakukan unlock agar thread lain mendapatkan akses ke array list tile
+            lock.unlock();
+        }
+
+        this.ivCanvas.invalidate();
+    }
+
 
     /**
      * Menggambar ulang tile yang ada di tileList ke canvas berdasarkan hasil update dari thread
@@ -392,6 +421,9 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
                 if (pressed) {
                     //Merupakan event ACTION_POINTER_DOWN atau ACTION_DOWN
+                    Log.d("debug press", "pressed" + coords.toString());
+
+                    this.pointerCoords = coords;
 
                     //Cek koordinat sentuh berada di dalam area tiles
                     if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
@@ -401,15 +433,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                         //set state tiles pernah disentuh
                         currTile.setPressed(true);
 
-                        //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
-                        //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
-                        if (currTile.isPressed() && !currTile.isReleased()) {
-                            this.currScore += 10;
-                            this.tvScore.setText(this.currScore + "");
-                        }
                     }
                 } else {
                     //Merupakan event ACTION_POINTER_UP atau ACTION_UP
+                    Log.d("debug press", "released" + coords.toString());
+                    this.pointerCoords = null;
 
                     if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
                             && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
@@ -423,37 +451,111 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                         currTile.setReleased(true);
 
                     }
+                    this.tvScoreIncrement.startAnimation(AnimationUtils.loadAnimation(this.context, R.anim.scale_out_in));
+                    this.tvScoreIncrement.setText("+ " + this.scoreIncrement);
+                    this.tvScoreIncrement.clearAnimation();
                 }
+
+                //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
+                //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
+                if (currTile.isPressed() && !currTile.isReleased()) {
+                    increaseScore();
+                }
+
                 prevTile = currTile;
             }
         } finally {
             //melakukan unlock agar thread lain mendapatkan akses ke array list tile
             lock.unlock();
         }
-    }
-
-    public void showGameDialog() {
-        Bundle args = new Bundle();
-        args.putInt("highscore", this.currScore);
-        this.popupScoreFragment = PopupScoreFragment.newInstance(this.presenter, args);
-
-        //Reference: https://stackoverflow.com/questions/44018711/how-to-dialogfragment-disable-click-outside-on-android
-        //Set dialog agar tidak hilang ketika dilakukan touch pada area diluar dialog
-        this.popupScoreFragment.setCancelable(false);
-        this.popupScoreFragment.show(getFragmentManager(), popupScoreFragment.getTag());
 
     }
 
-    /**
-     * Metode untuk menghentikan thread ketika dilakukan back press dari gameplay fragment ke lobby
-     */
-    public void stopOnHide() {
-        //Reference:https://developer.android.com/reference/android/app/Fragment.html#isHidden()
-        if (isHidden()) {
-            //Cek status fragment hidden atau tidak
-            this.threadHandler.setStopped(true);
+    public void increaseScore() {
+        //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
+        //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
+        this.currScore += this.scoreIncrement;
+        this.tvScore.setText(this.currScore + "");
+        this.tvScoreIncrement.startAnimation(AnimationUtils.loadAnimation(this.context, R.anim.scale_out_in));
+        this.tvScoreIncrement.setText("+ " + this.scoreIncrement);
+        this.tvScoreIncrement.clearAnimation();
+    }
+
+    //##############################################################################################
+    //SENSOR RELATED METHODS
+    //##############################################################################################
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+//        Log.d("debug sensor", "Sensor change");
+        int sensorType = event.sensor.getType();
+        switch (sensorType) {
+            case Sensor.TYPE_ACCELEROMETER:
+                this.accelerometerReadings = event.values.clone();
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+                this.magnetometerReadings = event.values.clone();
+                break;
+        }
+
+        float[] rotationMatrix = new float[9];
+        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReadings, magnetometerReadings);
+
+        float[] orientationValues = new float[3];
+        SensorManager.getOrientation(rotationMatrix, orientationValues);
+
+
+        float azimuth = orientationValues[0];
+        float pitch = orientationValues[1];
+        float roll = orientationValues[2];
+
+        if (Math.abs(azimuth) < VALUE_DRIFT) {
+            azimuth = 0;
+        }
+        if (Math.abs(pitch) < VALUE_DRIFT) {
+            pitch = 0;
+        }
+        if (Math.abs(roll) < VALUE_DRIFT) {
+            roll = 0;
+        }
+
+        if (Math.abs(azimuth - prevAzimuth) > ACCURACY_DRIFT
+                || Math.abs(pitch - prevPitch) > ACCURACY_DRIFT
+                || Math.abs(roll - prevRoll) > ACCURACY_DRIFT) {
+            this.scoreIncrement = PITCH_SCORE_INCREMENT;
+        } else {
+            this.scoreIncrement = NORMAL_SCORE_INCREMENT;
+        }
+        prevPitch = pitch;
+        prevAzimuth = azimuth;
+        prevRoll = roll;
+
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (this.accelerometer != null) {
+            this.mSensorManager.registerListener(this, this.accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
+
+        if (this.magnetometer != null) {
+            this.mSensorManager.registerListener(this, this.magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        this.mSensorManager.unregisterListener(this);
+    }
+
 
     private class MyDetector extends GestureDetector.SimpleOnGestureListener {
         @Override

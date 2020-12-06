@@ -12,6 +12,7 @@ public class UIThreadHandler extends Handler {
     protected final static int MSG_TOOGLE_DIALOG = 1;
     protected final static int MSG_CHECK_VISIBILITY = 2;
     protected final static int MSG_REFILL_LIST = 3;
+    protected final static int MSG_INCREASE_SCORE = 4;
     protected GamePlayFragment gpf;
 
     public UIThreadHandler(GamePlayFragment gpf) {
@@ -31,6 +32,8 @@ public class UIThreadHandler extends Handler {
             this.gpf.stopOnHide();
         }else if(m.what == UIThreadHandler.MSG_REFILL_LIST){
             this.gpf.fillTheList();
+        }else if(m.what == UIThreadHandler.MSG_INCREASE_SCORE){
+            this.gpf.increaseScore();
         }
     }
 
@@ -59,6 +62,12 @@ public class UIThreadHandler extends Handler {
     public void reFillList(){
         Message m = new Message();
         m.what = MSG_REFILL_LIST;
+        this.sendMessage(m);
+    }
+
+    public void increaseScore(){
+        Message m = new Message();
+        m.what = MSG_INCREASE_SCORE;
         this.sendMessage(m);
     }
 }

@@ -3,10 +3,11 @@ package com.example.pianotiles;
 import android.graphics.Color;
 
 public class Tiles {
-    protected int x, y, width, height, color;
+    protected int index, x, y, width, height, color;
     boolean isPressed, isReleased, isMissed;
 
-    public Tiles (int x, int y, int width, int height){
+    public Tiles(int index, int x, int y, int width, int height) {
+        this.index = index;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -16,7 +17,11 @@ public class Tiles {
         this.isMissed = false;
 
         //Warna default hitam
-        this.color = Color.argb(255,0,0,0);
+        this.color = Color.argb(255, 0, 0, 0);
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     public int getX() {
@@ -75,20 +80,20 @@ public class Tiles {
         return isReleased;
     }
 
-    public int top(){
+    public int top() {
         return this.y - this.height;
     }
 
-    public int bottom(){
-        return this.y ;
+    public int bottom() {
+        return this.y;
     }
 
-    public int left(){
+    public int left() {
         return this.x;
     }
 
-    public int right(){
-        return this.x+this.width;
+    public int right() {
+        return this.x + this.width;
     }
 
 }

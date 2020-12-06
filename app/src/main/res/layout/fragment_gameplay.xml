@@ -1,44 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:background="@drawable/bg4"
     android:gravity="center"
-    android:background="@drawable/bg4">
+    android:orientation="vertical">
 
     <ImageView
         android:id="@+id/iv_canvas"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"/>
+        android:layout_weight="1" />
 
     <LinearLayout
+        android:id="@+id/ll_score"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:layout_centerHorizontal="true"
-        android:background="@drawable/rounded">
+        android:background="@drawable/rounded"
+        android:gravity="center"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Score:"
             android:fontFamily="casual"
-            android:textSize="@dimen/score2"
             android:padding="10dp"
-            />
+            android:text="Score:"
+            android:textSize="@dimen/score2" />
 
         <TextView
             android:id="@+id/tv_score"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="10dp"
             android:text="000"
             android:textSize="@dimen/score2"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
 
     </LinearLayout>
+
+
+    <TextView
+        android:id="@+id/tv_score_increment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/ll_score"
+        android:layout_centerHorizontal="true"
+        android:text="+ 0"
+        android:textColor="@color/red"
+        android:textSize="@dimen/score2"
+        android:textStyle="bold" />
+
 
     <LinearLayout
         android:id="@+id/llstart"
@@ -47,14 +59,15 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentBottom="true"
         android:background="@color/gray_shade"
-        android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="vertical">
+
         <Button
             android:id="@+id/btn_start"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start"
-            android:fontFamily="casual"/>
+            android:fontFamily="casual"
+            android:text="Start" />
     </LinearLayout>
 
 </RelativeLayout>
