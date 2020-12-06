@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 
 public class LobbyFragment extends Fragment {
     protected Button btnPlay;
-    protected Button btnSetting;
     protected Button btnHS;
     protected Button btnExit;
     protected FragmentType fragmentType;
