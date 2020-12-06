@@ -54,7 +54,6 @@ public class ThreadHandler extends java.lang.Thread {
                 for (int i = 0; i < listTiles.size(); i++) {
 
                     Tiles currTile = listTiles.get(i);
-                    currTile.setY(currTile.getY() + FRAME_CHANGE_RATE);
 
                     //Cek apakah posisi tile berada di bawah sensor
                     if (currTile.bottom() >= sensorBar.getCircleTop() //Nilai bottom dari tile sama dengan atau lebih besar dari nilai top dari lingkaran pada sensor bar
@@ -110,6 +109,11 @@ public class ThreadHandler extends java.lang.Thread {
                     if ((currTile.top() > this.canvasHeight) && currTile.isPressed) {
                         toBeDelete.add(currTile);
                     }
+
+                    //Di set di akhir agar tidak menyebabkan game keluar sebelum berhasil melakukan render ulang nilai bottom yang telah berubah
+
+                    int newBottomValue = currTile.getY() + FRAME_CHANGE_RATE;
+                    currTile.setY(newBottomValue);
                 }
 
                 //Menghapus tiles yang sudah keluar dari area canvas
