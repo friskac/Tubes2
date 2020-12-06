@@ -33,7 +33,8 @@ public class UIThreadHandler extends Handler {
         }else if(m.what == UIThreadHandler.MSG_REFILL_LIST){
             this.gpf.fillTheList();
         }else if(m.what == UIThreadHandler.MSG_INCREASE_SCORE){
-            this.gpf.increaseScore();
+            int type = (int) m.obj;
+            this.gpf.increaseScore(type);
         }
     }
 
@@ -65,9 +66,10 @@ public class UIThreadHandler extends Handler {
         this.sendMessage(m);
     }
 
-    public void increaseScore(){
+    public void increaseScore(int type){
         Message m = new Message();
         m.what = MSG_INCREASE_SCORE;
+        m.obj = type;
         this.sendMessage(m);
     }
 }

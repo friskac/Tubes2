@@ -50,15 +50,22 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
     final static int MAX_TILES_IN_LIST = 8;
 
+     final static int TAP_INCREMENT_TYPE = 0;
+     final static int SENSOR_INCREMENT_TYPE = 1;
+     final static int TAP_SCORE_INCREMENT = 1;
+     final static int SENSOR_SCORE_INCREMENT = 20;
+
+    public static final float VALUE_DRIFT = 0.05f;
+    public static final float ACCURACY_DRIFT = 0.5f;
+
     //Model and lists
     private ArrayList<Tiles> listTile;
     private ArrayList<Tiles> fullTileList;
     private UIThreadHandler uiHandler;
     private ThreadHandler threadHandler;
     private Presenter presenter;
-    private int NORMAL_SCORE_INCREMENT = 1;
-    private int PITCH_SCORE_INCREMENT = 10;
     private int scoreIncrement;
+    private SensorBar sensorBar;
 
     //View related attributes
     private PopupScoreFragment popupScoreFragment;
@@ -82,18 +89,12 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
 
 
     //Attributes for Sensor
-    public static final float VALUE_DRIFT = 0.05f;
-    public static final float ACCURACY_DRIFT = 0.1f;
     private SensorManager mSensorManager;
     private float[] accelerometerReadings;
     private float[] magnetometerReadings;
 
     private Sensor accelerometer;
     private Sensor magnetometer;
-
-    private float prevAzimuth;
-    private float prevPitch;
-    private float prevRoll;
 
     //Thread related attributes
     //Reference: https://stackoverflow.com/questions/3392139/thread-synchronization-java
@@ -156,11 +157,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         this.accelerometerReadings = new float[3];
         this.magnetometerReadings = new float[3];
 
-        this.scoreIncrement = NORMAL_SCORE_INCREMENT;
-
-        prevAzimuth = 0;
-        prevPitch = 0;
-        prevRoll = 0;
+        this.scoreIncrement = TAP_SCORE_INCREMENT;
 
         return view;
     }
@@ -217,7 +214,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                     return true;
 
                 case MotionEvent.ACTION_DOWN:
-//                case MotionEvent.ACTION_POINTER_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN:
                     int color2 = ResourcesCompat.getColor(getResources(), R.color.blue, null);
                     recolorTile(pointer, color2, true);
                     return true;
@@ -273,7 +270,12 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         //resetCanvas
         this.resetCanvas();
         this.isCanvasInitiated = true;
+
+        //Isi list tiles dengan tile dummy
         this.fullTileList = MockSong.generateMockTiles(this.ivCanvas.getWidth(), this.ivCanvas.getHeight());
+
+        //Buat model dari sensor bar;
+        this.sensorBar = new SensorBar(this.ivCanvas.getWidth(), this.ivCanvas.getHeight());
     }
 
 
@@ -290,6 +292,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
         this.strokePaint.setColor(mColor);
 
+        //Menggambar ulang garis di antara jalur tile
         int canvasHeight = ivCanvas.getHeight();
         int lineX = ivCanvas.getWidth() / 4;
         int lineHeight = canvasHeight;
@@ -301,6 +304,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
         this.ivCanvas.invalidate();
     }
 
+    /**
+     * Pointer yang digunakan untuk mengambil lokasi sentuhan pada kanvas saat ini
+     * @return
+     */
     public MotionEvent.PointerCoords getLastPointerCoords() {
         return pointerCoords;
     }
@@ -318,8 +325,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             int height = this.ivCanvas.getHeight() / 5;
             int spacing = this.ivCanvas.getHeight() / 20;
             int initialSpace = this.ivCanvas.getHeight();
-//        Log.d("debug", "height : " + height);
-//        Log.d("debug", "width : " + width);
 
             Tiles prevTile = null;
             if (this.listTile.size() > 0) {
@@ -329,9 +334,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             while (this.listTile.size() <= MAX_TILES_IN_LIST && fullTileList.size() > 0) {
                 Tiles currTile;
                 if (prevTile == null) {
+                    //Mengambil tile paling depan dari fullTileList untuk dimasukkan ke listTile
                     currTile = fullTileList.remove(0);
-
                 } else {
+                    //Mengambil tile paling depan dari fullTileList untuk dimasukkan ke bagian akhir listTile
+                    // dengan tetap memperhatikan tiles paling akhir saat ini di listTile
                     currTile = fullTileList.remove(0);
                     int barIdx = currTile.getIndex();
                     int x = currTile.left();
@@ -353,7 +360,6 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             lock.unlock();
         }
 
-//        Log.d("debug fill list", "List size : " + this.listTile.size());
     }
 
     /**
@@ -389,6 +395,21 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             //melakukan unlock agar thread lain mendapatkan akses ke array list tile
             lock.unlock();
         }
+
+        //Gambar ulang garis sensor bar
+        int mColor = ResourcesCompat.getColor(getResources(), R.color.white, null);
+        this.strokePaint.setColor(mColor);
+        this.gameCanvas.drawRect(new Rect(sensorBar.left, sensorBar.top, sensorBar.right, sensorBar.bottom), this.strokePaint);
+
+        //Gambar ulang lingkaran terluar sensor bar
+         mColor = ResourcesCompat.getColor(getResources(), R.color.plum, null);
+        this.strokePaint.setColor(mColor);
+        this.gameCanvas.drawCircle(sensorBar.cx, sensorBar.cy, sensorBar.radius, strokePaint);
+
+        //Gambar ulang lingkaran dalam sensor bar
+        mColor = ResourcesCompat.getColor(getResources(), R.color.blue, null);
+        this.strokePaint.setColor(mColor);
+        this.gameCanvas.drawCircle(sensorBar.cxMiniCircle, sensorBar.cyMiniCircle, sensorBar.radMiniCircle, strokePaint);
 
         this.ivCanvas.invalidate();
     }
@@ -459,9 +480,10 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                 //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
                 //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
                 if (currTile.isPressed() && !currTile.isReleased()) {
-                    increaseScore();
+                    increaseScore(TAP_INCREMENT_TYPE);
                 }
 
+                //assign pointer ke tile saat ini untuk digunakan oleh tiles selanjutnya
                 prevTile = currTile;
             }
         } finally {
@@ -469,11 +491,20 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             lock.unlock();
         }
 
+
     }
 
-    public void increaseScore() {
+    public void increaseScore(int type) {
         //Cek kondisi tiles sedang disentuh dan belum pernah dilepas.
         //Jika sudah pernah disentuh dan sudah pernah dilepas, maka skor tidak akan ditambahkan
+
+        //Menambahkan skor berdasarkan jenis interaksi dengan tile
+        if(type == SENSOR_INCREMENT_TYPE){
+            this.scoreIncrement = SENSOR_SCORE_INCREMENT;
+        }else if(type == TAP_INCREMENT_TYPE){
+            this.scoreIncrement = TAP_SCORE_INCREMENT;
+        }
+
         this.currScore += this.scoreIncrement;
         this.tvScore.setText(this.currScore + "");
         this.tvScoreIncrement.startAnimation(AnimationUtils.loadAnimation(this.context, R.anim.scale_out_in));
@@ -484,6 +515,11 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
     //##############################################################################################
     //SENSOR RELATED METHODS
     //##############################################################################################
+
+
+    public SensorBar getSensorBar() {
+        return sensorBar;
+    }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -519,17 +555,19 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
             roll = 0;
         }
 
-        if (Math.abs(azimuth - prevAzimuth) > ACCURACY_DRIFT
-                || Math.abs(pitch - prevPitch) > ACCURACY_DRIFT
-                || Math.abs(roll - prevRoll) > ACCURACY_DRIFT) {
-            this.scoreIncrement = PITCH_SCORE_INCREMENT;
-        } else {
-            this.scoreIncrement = NORMAL_SCORE_INCREMENT;
+        if (isCanvasInitiated) {
+            if (Math.abs(roll) > ACCURACY_DRIFT) {
+                float ceiledRoll =  (float)Math.ceil((double)(roll));
+                if(ceiledRoll <= 0 ){
+                    ceiledRoll = 1;
+                }
+                if (roll < 0) {
+                    sensorBar.modifyCX((float)(sensorBar.CIRCLE_MOVEMENT_SPEED*-ceiledRoll));
+                } else if (roll > 0) {
+                    sensorBar.modifyCX((float)(sensorBar.CIRCLE_MOVEMENT_SPEED*ceiledRoll));
+                }
+            }
         }
-        prevPitch = pitch;
-        prevAzimuth = azimuth;
-        prevRoll = roll;
-
     }
 
     @Override
