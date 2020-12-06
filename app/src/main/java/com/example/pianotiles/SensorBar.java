@@ -54,4 +54,8 @@ public class SensorBar {
     public float getCircleRight() {
         return cx+this.radius;
     }
+
+    public float getCenterY(){
+        return this.cy;
+    }
 }

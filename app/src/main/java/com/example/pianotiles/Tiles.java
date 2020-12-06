@@ -96,4 +96,18 @@ public class Tiles {
         return this.x + this.width;
     }
 
+    @Override
+    public String toString() {
+        return "Tiles{" +
+                "index=" + index +
+                ", x=" + x +
+                ", y=" + y +
+                ", width=" + width +
+                ", height=" + height +
+                ", color=" + color +
+                ", isPressed=" + isPressed +
+                ", isReleased=" + isReleased +
+                ", isMissed=" + isMissed +
+                '}';
+    }
 }

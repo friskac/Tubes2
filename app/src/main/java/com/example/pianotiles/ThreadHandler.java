@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ThreadHandler extends java.lang.Thread {
@@ -50,28 +51,29 @@ public class ThreadHandler extends java.lang.Thread {
                 }
 
                 SensorBar sensorBar = this.UIThread.getFragmentGame().getSensorBar();
-
-                for (int i = 0; i < listTiles.size(); i++) {
-
-                    Tiles currTile = listTiles.get(i);
+                Iterator<Tiles> iterator = listTiles.iterator();
+                int counter =0;
+                while(iterator.hasNext()){
+                    Tiles currTile = iterator.next();
+                    Log.d("debug thread tile:", currTile.toString());
 
                     //Cek apakah posisi tile berada di bawah sensor
                     if (currTile.bottom() >= sensorBar.getCircleTop() //Nilai bottom dari tile sama dengan atau lebih besar dari nilai top dari lingkaran pada sensor bar
-                            && currTile.left() <= sensorBar.getCircleLeft() //Nilai left dari tile sama dengan atau lebih kecil dari nilai left dari lingkaran pada sensor bar
-                            && currTile.right() >= sensorBar.getCircleRight() //Nilai right dari tile sama dengan atau lebih dari nilai right dari lingkaran pada sensor bar
+                            && (currTile.left() <= sensorBar.getCircleRight() //Nilai left dari tile sama dengan atau lebih kecil dari nilai left dari lingkaran pada sensor bar
+                            && currTile.right() >= sensorBar.getCircleLeft()) //Nilai right dari tile sama dengan atau lebih dari nilai right dari lingkaran pada sensor bar
                             && !currTile.isPressed() //hanya diproses sensor jika tile belum pernah ditekan
                     ) {
                         //Ubah state tile jadi sudah pernah ditekan dan sudah dilepaskan
                         currTile.setPressed(true);
                         currTile.setReleased(true);
                         this.UIThread.increaseScore(GamePlayFragment.SENSOR_INCREMENT_TYPE);
-                        Log.d("debug thread", "is pressed"+currTile.isPressed());
-                        Log.d("debug thread", "bttom:"+currTile.bottom());
+                        Log.d("debug thread", "sensor is pressed i " +counter+" "+ currTile.isPressed());
+                        Log.d("debug thread", "bttom:" + currTile.bottom());
                     }
 
                     if ((currTile.bottom() > this.canvasHeight) && !currTile.isPressed()) {
-                        Log.d("debug thread", "is pressed"+currTile.isPressed());
-                        Log.d("debug thread", "bttom:"+currTile.bottom());
+                        Log.d("debug thread", "is pressed i " +counter+" "+ currTile.isPressed());
+                        Log.d("debug thread", "bttom:" + currTile.bottom());
                         //koordinat bottom tiles berada di luar canvas dan belum pernah ditekan
                         //Game akan berhenti
                         int color = Color.argb(255, 217, 28, 37);
@@ -98,7 +100,12 @@ public class ThreadHandler extends java.lang.Thread {
                     if (currTile.isPressed() && !currTile.isReleased()) {
                         MotionEvent.PointerCoords coords = this.UIThread.getFragmentGame().getLastPointerCoords();
                         if (coords != null) {
-                            if ((currTile.getX() <= coords.x && (currTile.getX() + currTile.getWidth()) > coords.x) && (currTile.getY() >= coords.y && (currTile.getY() - currTile.getHeight()) < coords.y)) {
+                            if (currTile.isPressed() //Cek tiles pernah di tekan atau tidak. Ada kasus dimana event tekan di luar area tiles, namun release di dalam area tiles
+                                    && (currTile.left() <= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kanan dari tiles
+                                    && (currTile.right() >= coords.x) //Cek koordinat x dari event sentuh berada di sebelah kiri dari tiles
+                                    && (currTile.bottom() >= coords.y)//Cek koordinat bottom dari tile harus lebih besar dari nilai koordinat y dari event sentuh
+                                //Koordinat top dapat diabaikan dan hanya dilakukan pengecekan koordinat bottom saja, karena ada kasus touch tepat pada tiles, namun release terjadi di luar area tiles
+                            ) {
                                 this.UIThread.increaseScore(GamePlayFragment.TAP_INCREMENT_TYPE);
                             }
                         }
@@ -111,9 +118,8 @@ public class ThreadHandler extends java.lang.Thread {
                     }
 
                     //Di set di akhir agar tidak menyebabkan game keluar sebelum berhasil melakukan render ulang nilai bottom yang telah berubah
-
                     int newBottomValue = currTile.getY() + FRAME_CHANGE_RATE;
-                    currTile.setY(newBottomValue);
+                    currTile.setY(newBottomValue);counter++;
                 }
 
                 //Menghapus tiles yang sudah keluar dari area canvas

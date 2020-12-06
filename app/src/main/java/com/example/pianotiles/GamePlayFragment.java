@@ -56,7 +56,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
      final static int SENSOR_SCORE_INCREMENT = 25;
 
     public static final float VALUE_DRIFT = 0.05f;
-    public static final float ACCURACY_DRIFT = 0.5f;
+    public static final float ACCURACY_DRIFT = 0.15f;
 
     //Model and lists
     private ArrayList<Tiles> listTile;
@@ -352,6 +352,7 @@ public class GamePlayFragment extends Fragment implements View.OnClickListener, 
                     currTile = new Tiles(barIdx, x, y, tileWidth, tileHeight);
                 }
 
+//                Log.d("debug mock tile:", currTile.toString());
                 this.listTile.add(currTile);
                 prevTile = currTile;
             }
